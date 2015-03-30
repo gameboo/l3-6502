@@ -1,0 +1,33 @@
+---------------------------------------------------------------------------
+-- (c) Alexandre Joannou, University of Cambridge
+---------------------------------------------------------------------------
+
+declare A :: bits(8) -- Accumulator register
+declare X :: bits(8) -- X index register
+declare Y :: bits(8) -- Y index register
+declare S :: bits(8) -- stack pointer register
+
+-- Program Counter --
+register PC_t :: bits(16)
+{
+    15-8 : H -- high order byte of the Program Counter
+     7-0 : L -- low order byte of the Program Counter
+}
+declare PC :: PC_t -- Program Counter register
+
+-- STATUS --
+register STATUS_t :: bits(8)
+{
+    7 : N -- Negative flag
+    6 : V -- oVerflow flag
+    5 : r -- reserved (set to 1)
+    4 : B -- Break flag
+    3 : D -- Decimal mode flag
+    2 : I -- Interrupt ReQuest disable flag
+    1 : Z -- Zero flag
+    0 : C -- Carry flag
+}
+declare STATUS :: STATUS_t -- STATUS register
+
+-- types --
+type ByteStream = bits(8) list -- Byte stream (variable length instructions)
