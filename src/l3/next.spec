@@ -33,5 +33,7 @@ unit Next =
         PC.L <- ReadMem(0xFFFE);
         PC.H <- ReadMem(0xFFFF)
     } else nothing;
-    Run (Decode (Fetch))
+    (pc_inc, inst) = Decode (Fetch);
+    PC <- PC_t(&PC + [pc_inc]);
+    Run(inst)
 }
