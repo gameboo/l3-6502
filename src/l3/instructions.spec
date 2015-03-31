@@ -2,6 +2,32 @@
 -- (c) Alexandre Joannou, University of Cambridge
 ---------------------------------------------------------------------------
 
+-------------
+-- helpers --
+-------------
+
+STATUS_t updateN (st::STATUS_t, val::bits(8)) = {var new = st; new.N <- val<7>; new}
+STATUS_t updateZ (st::STATUS_t, val::bits(8)) = {var new = st; new.Z <- val == 0; new}
+STATUS_t updateNZ (st::STATUS_t, val::bits(8)) =
+{
+    var new = st;
+    new <- updateN (new, val);
+    new <- updateZ (new, val);
+    new
+}
+
+unit spush (val::bits(8)) = { WriteMem(0x01:S, val); S <- S - 1 }
+bits(8) spop = { S <- S + 1; ReadMem(0x01:S) }
+
+bits(8) valFromOp (op::Operand) = match op
+{
+    case Addr(a) => ReadMem(a)
+    case Val(v) => v
+    case Acc => A
+}
+
+unit unexpectedBehaviour = nothing -- TODO
+
 -----------------------------
 -- Load / Store Operations --
 -----------------------------
@@ -12,24 +38,23 @@
 The accumulator is loaded with the value of the operand
 The N (negative) and the Z (zero) flags are updated
 -}
-define Load > LDA (operand::bits(8)) =
+define Load > LDA (op::Operand) =
 {
-    A <- operand;
-    STATUS.N <- operand<7>;
-    STATUS.Z <- operand == 0
+    val = valFromOp(op);
+    A <- val;
+    STATUS <- updateNZ (STATUS, val)
 }
-
 -- LDX --
 ---------
 {-
 The X index regiser is loaded with the value of the operand
 The N (negative) and the Z (zero) flags are updated
 -}
-define Load > LDX (operand::bits(8)) =
+define Load > LDX (op::Operand) =
 {
-    X <- operand;
-    STATUS.N <- operand<7>;
-    STATUS.Z <- operand == 0
+    val = valFromOp(op);
+    X <- val;
+    STATUS <- updateNZ (STATUS, val)
 }
 
 -- LDY --
@@ -38,11 +63,11 @@ define Load > LDX (operand::bits(8)) =
 The Y index regiser is loaded with the value of the operand
 The N (negative) and the Z (zero) flags are updated
 -}
-define Load > LDY (operand::bits(8)) =
+define Load > LDY (op::Operand) =
 {
-    Y <- operand;
-    STATUS.N <- operand<7>;
-    STATUS.Z <- operand == 0
+    val = valFromOp(op);
+    Y <- val;
+    STATUS <- updateNZ (STATUS, val)
 }
 
 -- STA --
@@ -51,7 +76,11 @@ define Load > LDY (operand::bits(8)) =
 The accumulator’s value is stored in the location pointed by the operand
 The STATUS register is left untouched
 -}
-define Store > STA (addr::bits(16)) = WriteMem(addr, A)
+define Store > STA (op::Operand) = match op
+{
+    case Addr(a) => WriteMem(a, A)
+    case _ => unexpectedBehaviour
+}
 
 -- STX --
 ---------
@@ -59,7 +88,11 @@ define Store > STA (addr::bits(16)) = WriteMem(addr, A)
 The X index register's value is stored in the location pointed by the operand
 The STATUS register is left untouched
 -}
-define Store > STX (addr::bits(16)) = WriteMem(addr, X)
+define Store > STX (op::Operand) = match op
+{
+    case Addr(a) => WriteMem(a, X)
+    case _ => unexpectedBehaviour
+}
 
 -- STY --
 ---------
@@ -67,7 +100,11 @@ define Store > STX (addr::bits(16)) = WriteMem(addr, X)
 The Y index register's value is stored in the location pointed by the operand
 The STATUS register is left untouched
 -}
-define Store > STY (addr::bits(16)) = WriteMem(addr, Y)
+define Store > STY (op::Operand) = match op
+{
+    case Addr(a) => WriteMem(a, Y)
+    case _ => unexpectedBehaviour
+}
 
 -----------------------------------
 -- Registers Transfer Operations --
@@ -79,11 +116,10 @@ define Store > STY (addr::bits(16)) = WriteMem(addr, Y)
 The accumulator’s value is stored into the X index register
 The N (negative) and the Z (zero) flags are updated
 -}
-define Transfer > TAX () =
+define Transfer > TAX =
 {
     X <- A;
-    STATUS.N <- X<7>;
-    STATUS.Z <- X == 0
+    STATUS <- updateNZ (STATUS, X)
 }
 
 -- TAY --
@@ -92,11 +128,10 @@ define Transfer > TAX () =
 The accumulator’s value is stored into the Y index register
 The N (negative) and the Z (zero) flags are updated
 -}
-define Transfer > TAY () =
+define Transfer > TAY =
 {
     Y <- A;
-    STATUS.N <- Y<7>;
-    STATUS.Z <- Y == 0
+    STATUS <- updateNZ (STATUS, Y)
 }
 
 -- TXA --
@@ -105,11 +140,10 @@ define Transfer > TAY () =
 The X index register’s value is stored into the accumulator
 The N (negative) and the Z (zero) flags are updated
 -}
-define Transfer > TXA () =
+define Transfer > TXA =
 {
     A <- X;
-    STATUS.N <- A<7>;
-    STATUS.Z <- A == 0
+    STATUS <- updateNZ (STATUS, A)
 }
 
 -- TYA --
@@ -118,11 +152,10 @@ define Transfer > TXA () =
 The Y index register’s value is stored into the accumulator
 The N (negative) and the Z (zero) flags are updated
 -}
-define Transfer > TYA () =
+define Transfer > TYA =
 {
     A <- Y;
-    STATUS.N <- A<7>;
-    STATUS.Z <- A == 0
+    STATUS <- updateNZ (STATUS, A)
 }
 
 ----------------------
@@ -135,11 +168,10 @@ define Transfer > TYA () =
 The S (stack pointer) register’s value is stored into the X index register
 The N (negative) and the Z (zero) flags are updated
 -}
-define Stack > TSX () =
+define Stack > TSX =
 {
     X <- S;
-    STATUS.N <- X<7>;
-    STATUS.Z <- X == 0
+    STATUS <- updateNZ (STATUS, X)
 }
 
 -- TXS --
@@ -148,7 +180,7 @@ define Stack > TSX () =
 The X index register’s value is stored into the S (stack pointer) register
 The STATUS register is left untouched
 -}
-define Stack > TXS () = S <- X
+define Stack > TXS = S <- X
 
 -- PHA --
 ---------
@@ -157,11 +189,7 @@ The accumulator is stored on the stack. The S (stack pointer) register is
 decremented by one
 The STATUS register is left untouched
 -}
-define Stack > PHA () =
-{
-    WriteMem(0x01:S, A);
-    S <- S - 1
-}
+define Stack > PHA = spush (A)
 
 -- PHP --
 ---------
@@ -170,11 +198,7 @@ The STATUS register is stored on the stack. The S (stack pointer) register is
 decremented by one
 The STATUS register is left untouched
 -}
-define Stack > PHP () =
-{
-    WriteMem(0x01:S, &STATUS);
-    S <- S - 1
-}
+define Stack > PHP = spush (&STATUS)
 
 -- PLA --
 ---------
@@ -183,12 +207,10 @@ The S (stack pointer) register is incremented by one. The pointed location’s
 content is then poped from the stack into the accumulator
 The N (negative) and Z (zero) flags are updated
 -}
-define Stack > PLA () =
+define Stack > PLA =
 {
-    S <- S + 1;
-    A <- ReadMem(0x01:S);
-    STATUS.N <- A<7>;
-    STATUS.Z <- A == 0
+    A <- spop;
+    STATUS <- updateNZ (STATUS, A)
 }
 
 -- PLP --
@@ -197,11 +219,7 @@ define Stack > PLA () =
 The S (stack pointer) register is incremented by one. The pointed location’s
 content is then poped from the stack into the STATUS register
 -}
-define Stack > PLP () =
-{
-    S <- S + 1;
-    STATUS <- STATUS_t(ReadMem(0x01:S))
-}
+define Stack > PLP = STATUS <- STATUS_t(spop)
 
 ------------------------
 -- Logical Operations --
@@ -214,11 +232,10 @@ The accumulator is ”ANDed” with the operand, and the result is stored in the
 accumulator
 The N (negative) and Z (zero) flags are updated
 -}
-define Logical > AND (operand::bits(8)) =
+define Logical > AND (op::Operand) =
 {
-    A <- A && operand;
-    STATUS.N <- A<7>;
-    STATUS.Z <- A == 0
+    A <- A && valFromOp(op);
+    STATUS <- updateNZ (STATUS, A)
 }
 
 -- EOR --
@@ -228,11 +245,10 @@ The accumulator is ”XORed” with the operand. The result is stored in the
 accumulator
 The N (negative) and the Z (zero) flags are updated
 -}
-define Logical > EOR (operand::bits(8)) =
+define Logical > EOR (op::Operand) =
 {
-    A <- A ?? operand;
-    STATUS.N <- A<7>;
-    STATUS.Z <- A == 0
+    A <- A ?? valFromOp(op);
+    STATUS <- updateNZ (STATUS, A)
 }
 
 -- ORA --
@@ -242,11 +258,10 @@ The operand is ”ORed” with the accumulator. The result is stored in the
 accumulator
 The N (negative) and the Z (zero) flags are updated
 -}
-define Logical > ORA (operand::bits(8)) =
+define Logical > ORA (op::Operand) =
 {
-    A <- A || operand;
-    STATUS.N <- A<7>;
-    STATUS.Z <- A == 0
+    A <- A || valFromOp(op);
+    STATUS <- updateNZ (STATUS, A)
 }
 
 -- BIT --
@@ -258,11 +273,12 @@ The Z (zero) flag is updated
 The N (negative) and the V (overflow) flags are respectively updated with the
 7th and the 6th bit of the operand
 -}
-define Logical > BIT (operand::bits(8)) =
+define Logical > BIT (op::Operand) =
 {
-    res = A || operand;
-    STATUS.N <- operand<7>;
-    STATUS.V <- operand<6>;
+    val = valFromOp(op);
+    res = A || val;
+    STATUS.N <- val<7>;
+    STATUS.V <- val<6>;
     STATUS.Z <- res == 0
 }
 
@@ -279,23 +295,302 @@ The N (negative), V (overflow), Z (zero) and C (carry) flags are updated
 If D (decimal mode) flag is enabled, the Z (zero) flag is invalid ;
 the accumulator has to be checked for zero result
 -}
-define Arith > ADC (operand::bits(8)) =
+define Arith > ADC (op::Operand) =
 {
-    res`9 = SignExtend(A) + SignExtend(operand) +
+    val = valFromOp(op);
+    res`9 = SignExtend(A) + SignExtend(val) +
                      (if STATUS.C then 1`9 else 0`9);
     STATUS.C <- res<8>;
-    STATUS.N <- res<7>;
-    STATUS.V <- if (A<7> == operand<7> and A<7> <> res<7>) then
+    -- TODO check overflow computation
+    STATUS.V <- if (A<7> == val<7> and A<7> <> res<7>) then
                     true
                 else
                     false;
-    STATUS.Z <- A == 0;
-    A <- res<7:0>
+    A <- res<7:0>;
+    STATUS <- updateNZ (STATUS, A)
 }
+
+-- SBC --
+---------
+{-
+TODO
+-}
+define Arith > SBC (op::Operand) =
+{
+    val = valFromOp(op);
+    res`9 = SignExtend(A) - SignExtend(val) -
+                     (if STATUS.C then 0`9 else 1`9);
+    STATUS.C <- res < 0x100`9;
+    -- TODO check overflow computation
+    STATUS.V <- if (A<7> == val<7> and A<7> <> res<7>) then
+                    true
+                else
+                    false;
+    A <- res<7:0>;
+    STATUS <- updateNZ (STATUS, A)
+}
+
+-- CMP --
+---------
+{-
+TODO
+-}
+define Arith > CMP (op::Operand) =
+{
+    val = valFromOp(op);
+    res`9 = SignExtend(A) - SignExtend(val);
+    STATUS.C <- res < 0x100`9;
+    STATUS <- updateNZ (STATUS, res<7:0>)
+}
+
+-- CPX --
+---------
+{-
+TODO
+-}
+define Arith > CPX (op::Operand) =
+{
+    val = valFromOp(op);
+    res`9 = SignExtend(X) - SignExtend(val);
+    STATUS.C <- res < 0x100`9;
+    STATUS <- updateNZ (STATUS, res<7:0>)
+}
+
+-- CPY --
+---------
+{-
+TODO
+-}
+define Arith > CPY (op::Operand) =
+{
+    val = valFromOp(op);
+    res`9 = SignExtend(Y) - SignExtend(val);
+    STATUS.C <- res < 0x100`9;
+    STATUS <- updateNZ (STATUS, res<7:0>)
+}
+
+-----------------------------
+-- Increments / Decrements --
+-----------------------------
+
+-- INC --
+{-
+TODO
+-}
+define Inc > INC (op::Operand) = match op
+{
+    case Addr (a) =>
+    {
+        new_val = ReadMem(a) + 1;
+        WriteMem(a, new_val);
+        STATUS <- updateNZ (STATUS, new_val)
+    }
+    case _ => unexpectedBehaviour
+}
+
+-- INX --
+---------
+{-
+TODO
+-}
+define Inc > INX =
+{
+    X <- X + 1;
+    STATUS <- updateNZ (STATUS, X)
+}
+
+-- INY --
+---------
+{-
+TODO
+-}
+define Inc > INY =
+{
+    Y <- Y + 1;
+    STATUS <- updateNZ (STATUS, Y)
+}
+
+-- DEC --
+{-
+TODO
+-}
+define Dec > DEC (op::Operand) = match op
+{
+    case Addr (a) =>
+    {
+        new_val = ReadMem(a) - 1;
+        WriteMem(a, new_val);
+        STATUS <- updateNZ (STATUS, new_val)
+    }
+    case _ => unexpectedBehaviour
+}
+
+-- DEX --
+---------
+{-
+TODO
+-}
+define Dec > DEX =
+{
+    X <- X - 1;
+    STATUS <- updateNZ (STATUS, X)
+}
+
+-- DEY --
+---------
+{-
+TODO
+-}
+define Dec > DEY =
+{
+    Y <- Y - 1;
+    STATUS <- updateNZ (STATUS, Y)
+}
+
+------------
+-- Shifts --
+------------
+
+-- ASL --
+---------
+{-
+TODO
+-}
+define Shift > ASL (op::Operand) = match op
+{
+    case Addr (a) =>
+    {
+        new_val`9 = ZeroExtend(ReadMem(a)) << 1;
+        WriteMem(a, new_val<7:0>);
+        STATUS.C <- new_val<8>;
+        STATUS <- updateNZ (STATUS, new_val<7:0>)
+    }
+    case Acc =>
+    {
+        new_val`9 = ZeroExtend(A) << 1;
+        A <- new_val<7:0>;
+        STATUS.C <- new_val<8>;
+        STATUS <- updateNZ (STATUS, new_val<7:0>)
+    }
+    case _ => unexpectedBehaviour
+}
+
+-- LSR --
+---------
+{-
+TODO
+-}
+define Shift > LSR (op::Operand) = match op
+{
+    case Addr (a) =>
+    {
+        val = ReadMem(a);
+        STATUS.C <- val<0>;
+        new_val = val >> 1;
+        WriteMem(a, new_val);
+        STATUS <- updateNZ (STATUS, new_val)
+    }
+    case Acc =>
+    {
+        STATUS.C <- A<0>;
+        A <- A >> 1;
+        STATUS <- updateNZ (STATUS, A)
+    }
+    case _ => unexpectedBehaviour
+}
+
+-- ROL --
+---------
+{-
+TODO
+-}
+define Shift > ROL (op::Operand) = match op
+{
+    case Addr (a) =>
+    {
+        var new_val`9 = ZeroExtend(ReadMem(a)) << 1;
+        new_val<0> <- STATUS.C;
+        STATUS.C <- new_val<8>;
+        WriteMem(a, new_val<7:0>);
+        STATUS <- updateNZ (STATUS, new_val<7:0>)
+    }
+    case Acc =>
+    {
+        var new_val`9 = ZeroExtend(A) << 1;
+        new_val<0> <- STATUS.C;
+        STATUS.C <- new_val<8>;
+        A <- new_val<7:0>;
+        STATUS <- updateNZ (STATUS, new_val<7:0>)
+    }
+    case _ => unexpectedBehaviour
+}
+
+-- ROR --
+---------
+{-
+TODO
+-}
+define Shift > ROR (op::Operand) = match op
+{
+    case Addr (a) =>
+    {
+        val = ReadMem(a);
+        var new_val = val >> 1;
+        new_val<7> <- STATUS.C;
+        WriteMem(a, new_val);
+        STATUS.C <- val<0>;
+        STATUS <- updateNZ (STATUS, new_val)
+    }
+    case Acc =>
+    {
+        val = A;
+        var new_val = val >> 1;
+        new_val<7> <- STATUS.C;
+        A <- new_val;
+        STATUS.C <- val<0>;
+        STATUS <- updateNZ (STATUS, new_val)
+    }
+    case _ => unexpectedBehaviour
+}
+
+----------
+-- Jump --
+----------
+
+-- JMP --
+---------
+{-
+TODO
+-}
+define Jump > JMP (op::Operand) = match op
+{
+    case Addr (a) => PC <- PC_t(a)
+    case _ => unexpectedBehaviour
+}
+
+-- JSR --
+---------
+{-
+TODO
+-}
+define Jump > JSR (op::Operand) = match op
+{
+    case Addr (a) =>
+    {
+        spush (PC.H);
+        spush (PC.L);
+        PC <- PC_t(a)
+    }
+    case _ => unexpectedBehaviour
+}
+
+--RTS --
+--------
+define Jump > RTS = { PC.L <- spop; PC.H <- spop }
 
 -- Unknown instruction, i.e. unsuccessful decode --
 ---------------------------------------------------
-define UnknownInstruction = () -- TODO implement something
+define UnknownInstruction = unexpectedBehaviour
 
 -- done defining instructions --
 --------------------------------

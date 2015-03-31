@@ -8,8 +8,8 @@
 L3SRCDIR=src/l3
 L3SRCBASE+=base.spec
 L3SRCBASE+=memory.spec
-L3SRCBASE+=instructions.spec
 L3SRCBASE+=addressing-modes.spec
+L3SRCBASE+=instructions.spec
 L3SRCBASE+=decode.spec
 L3SRCBASE+=next.spec
 L3SRC=$(patsubst %, $(L3SRCDIR)/%, $(L3SRCBASE))

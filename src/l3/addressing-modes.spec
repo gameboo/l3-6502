@@ -4,6 +4,10 @@
 
 -- TODO add PC update in addressing mode functions ? / elsewhere ?
 
+-- Each addressing mode function will generate the operand source and returns
+-- it (except for the implied addressing more)  and update the PC TODO
+construct Operand {Addr :: bits(16), Val :: bits(8), Acc}
+
 -- Implied addressing mode --
 -----------------------------
 {-
@@ -20,7 +24,7 @@ This mode is used by 4 1-byte instructions. The operation is performed on the
 accumulator.
 operand = accumulator
 -}
-bits(8) accumulator = A
+Operand accumulator = Acc
 
 -- Immediate addressing mode --
 -------------------------------
@@ -29,7 +33,7 @@ This mode is used by 11 2-bytes instructions. The second byte of the in-
 struction contains the operand of the performed operation.
 operand = byte#2
 -}
-bits(8) immediate (a::bits(8)) = a
+Operand immediate (a::bits(8)) = Val(a)
 
 -- Absolute addressing mode --
 ------------------------------
@@ -39,7 +43,7 @@ instruction respectively contain the LSB and the MSB of the address of the
 operand of the performed operation.
 operand = Mem[byte#3; byte#2]
 -}
-bits(8) absolute (a::bits(8), b::bits(8)) = ReadMem(b:a)
+Operand absolute (a::bits(8), b::bits(8)) = Addr(b:a)
 
 -- X-indexed absolute addressing mode --
 ----------------------------------------
@@ -50,7 +54,7 @@ completed by adding to it the content of the X-index register. This is the
 final address of the operand of the performed operation.
 operand = Mem[(byte#3; byte#2) + X]
 -}
-bits(8) absolute_x (a::bits(8), b::bits(8)) = ReadMem((b:a)+SignExtend(X))
+Operand absolute_x (a::bits(8), b::bits(8)) = Addr((b:a)+SignExtend(X))
 
 -- Y-indexed absolute addressing mode --
 ----------------------------------------
@@ -61,7 +65,7 @@ completed by adding to it the content of the Y-index register. This is the
 final address of the operand of the performed operation.
 operand = Mem[(byte#3; byte#2) + Y]
 -}
-bits(8) absolute_y (a::bits(8), b::bits(8)) = ReadMem((b:a)+SignExtend(Y))
+Operand absolute_y (a::bits(8), b::bits(8)) = Addr((b:a)+SignExtend(Y))
 
 -- Absolute indirect addressing mode --
 ---------------------------------------
@@ -74,10 +78,10 @@ instruction).
 PCLSB = Mem[Mem[(byte#3; byte#2) + 1]; Mem[byte#3; byte#2]]
 PCMSB = Mem[(Mem[(byte#3; byte#2) + 1]; Mem[byte#3; byte#2]) + 1]
 -}
-bits(16) absolute_indirect (a::bits(8), b::bits(8)) =
+Operand absolute_indirect (a::bits(8), b::bits(8)) =
 {
     base`16 = (ReadMem((b:a)+1):ReadMem(b:a));
-    (ReadMem(base+1):ReadMem(base))
+    Addr(ReadMem(base+1):ReadMem(base))
 }
 
 -- Relative addressing mode --
@@ -88,7 +92,7 @@ instructions. The second byte of the instruction contains an offset ([−128;
 +127]) to be added to the PC when it’s set at the next instruction.
 branch with offset in byte#2
 -}
-bits(8) relative (a::bits(8)) = a
+Operand relative (a::bits(8)) = Val(a)
 
 -- Zero Page addressing mode --
 -------------------------------
@@ -98,7 +102,7 @@ instruction contains the LSB of the address of the operand of the performed
 12operation. The MSB is assumed to be 0.
 operand = Mem[00; byte#2]
 -}
-bits(8) zero_page (a::bits(8)) = ReadMem('00000000':a)
+Operand zero_page (a::bits(8)) = Addr(0`8:a)
 
 -- X-indexed Zero Page addressing mode --
 -----------------------------------------
@@ -110,7 +114,7 @@ MSB is assumed to be 0, and finally form the address of the operand of the
 performed operation.
 operand = Mem[00; (byte#2 + X)]
 -}
-bits(8) zero_page_x (a::bits(8)) = ReadMem(0 : a + X)
+Operand zero_page_x (a::bits(8)) = Addr(0`8:a+X)
 
 -- Y-indexed Zero Page addressing mode --
 -----------------------------------------
@@ -122,7 +126,7 @@ assumed to be 0, and finally form the address of the operand of the performed
 operation.
 operand = Mem[00; (byte#2 + Y)]
 -}
-bits(8) zero_page_y (a::bits(8)) = ReadMem(0 : a + Y)
+Operand zero_page_y (a::bits(8)) = Addr(0`8:a+Y)
 
 -- Indexed indirect addressing mode (IND,X) --
 ----------------------------------------------
@@ -134,10 +138,10 @@ respectively contain the LSB and the MSB of the address of the operand of the
 performed operation.
 operand = Mem[ Mem[00;(byte#2 + X + 1)] ; Mem[00;(byte#2 + X)] ]
 -}
-bits(8) indexed_indirect_x (a::bits(8)) =
+Operand indexed_indirect_x (a::bits(8)) =
 {
     base`16 = 0`8 : X + a;
-    ReadMem(ReadMem(base+1):ReadMem(base))
+    Addr(ReadMem(base+1):ReadMem(base))
 }
 
 -- Indirect indexed addressing mode (IND),Y --
@@ -150,8 +154,8 @@ the Y index register to form the effective address of the operand of the
 performed operation.
 operand = Mem[ (Mem[00; (byte#2 + 1)]; Mem[00; (byte#2)]) + Y ]
 -}
-bits(8) indirect_indexed_y (a::bits(8)) =
+Operand indirect_indexed_y (a::bits(8)) =
 {
     base`16 = ReadMem(0:a+1) : ReadMem(0:a);
-    ReadMem(base+SignExtend(Y))
+    Addr(base+SignExtend(Y))
 }
