@@ -26,6 +26,8 @@ bits(8) valFromOp (op::Operand) = match op
     case Acc => A
 }
 
+unit doBranch (op::Operand) = PC <- PC_t (&PC + SignExtend(valFromOp (op)))
+
 unit unexpectedBehaviour = nothing -- TODO
 
 -----------------------------
@@ -584,9 +586,143 @@ define Jump > JSR (op::Operand) = match op
     case _ => unexpectedBehaviour
 }
 
---RTS --
---------
+-- RTS --
+---------
+{-
+TODO
+-}
 define Jump > RTS = { PC.L <- spop; PC.H <- spop }
+
+--------------
+-- Branches --
+--------------
+
+-- BCC --
+---------
+{-
+TODO
+-}
+define Branch > BCC (op::Operand) = when not STATUS.C do doBranch (op)
+
+-- BCS --
+---------
+{-
+TODO
+-}
+define Branch > BCS (op::Operand) = when STATUS.C do doBranch (op)
+
+-- BEQ --
+---------
+{-
+TODO
+-}
+define Branch > BEQ (op::Operand) = when STATUS.Z do doBranch (op)
+
+-- BMI --
+---------
+{-
+TODO
+-}
+define Branch > BMI (op::Operand) = when STATUS.N do doBranch (op)
+
+-- BNE --
+---------
+{-
+TODO
+-}
+define Branch > BNE (op::Operand) = when not STATUS.Z do doBranch (op)
+
+-- BPL --
+---------
+{-
+TODO
+-}
+define Branch > BPL (op::Operand) = when not STATUS.N do doBranch (op)
+
+-- BVC --
+---------
+{-
+TODO
+-}
+define Branch > BVC (op::Operand) = when not STATUS.V do doBranch (op)
+
+-- BVS --
+---------
+{-
+TODO
+-}
+define Branch > BVS (op::Operand) = when STATUS.V do doBranch (op)
+
+----------------------
+-- Flags Fperations --
+----------------------
+
+-- CLC --
+{-
+TODO
+-}
+define Flags > CLC = STATUS.C <- false
+
+-- CLD --
+{-
+TODO
+-}
+define Flags > CLD = STATUS.D <- false
+
+-- CLI --
+{-
+TODO
+-}
+define Flags > CLI = STATUS.I <- false
+
+-- CLV --
+{-
+TODO
+-}
+define Flags > CLV = STATUS.V <- false
+
+-- SEC --
+{-
+TODO
+-}
+define Flags > SEC = STATUS.C <- true
+
+-- SED --
+{-
+TODO
+-}
+define Flags > SED = STATUS.D <- true
+
+-- SEI --
+{-
+TODO
+-}
+define Flags > SEI = STATUS.I <- true
+
+-----------------------
+-- System Operations --
+-----------------------
+
+-- BRK --
+---------
+{-
+TODO
+-}
+define Sys > BRK = nothing -- TODO
+
+-- NOP --
+---------
+{-
+TODO
+-}
+define Sys > NOP = nothing
+
+-- RTI --
+---------
+{-
+TODO
+-}
+define Sys > RTI = nothing -- TODO
 
 -- Unknown instruction, i.e. unsuccessful decode --
 ---------------------------------------------------
