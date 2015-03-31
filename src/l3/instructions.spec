@@ -708,7 +708,7 @@ define Flags > SEI = STATUS.I <- true
 {-
 TODO
 -}
-define Sys > BRK = nothing -- TODO
+define Sys > BRK = { INT.IRQ <- true; STATUS.B <- true }
 
 -- NOP --
 ---------
@@ -722,7 +722,7 @@ define Sys > NOP = nothing
 {-
 TODO
 -}
-define Sys > RTI = nothing -- TODO
+define Sys > RTI = { STATUS <- STATUS_t(spop); PC.L <- spop; PC.H <- spop }
 
 -- Unknown instruction, i.e. unsuccessful decode --
 ---------------------------------------------------
