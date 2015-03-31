@@ -29,5 +29,27 @@ register STATUS_t :: bits(8)
 }
 declare STATUS :: STATUS_t -- STATUS register
 
+-- interrupts --
+register INT_t :: bits(3)
+{
+    2 : IRQ     -- interrupt request
+    1 : NMI     -- non maskable interrupt
+    0 : RESET   -- reset
+}
+declare INT :: INT_t -- Interrupt sources
+
 -- types --
 type ByteStream = bits(8) list -- Byte stream (variable length instructions)
+
+-- Initialisation --
+unit initCPU =
+{
+    A           <- 0`8;
+    X           <- 0`8;
+    Y           <- 0`8;
+    S           <- 0`8;
+    PC          <- PC_t(0);
+    STATUS      <- STATUS_t(0);
+    STATUS.r    <- true;
+    INT         <- INT_t(0)
+}
