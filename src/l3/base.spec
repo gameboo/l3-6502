@@ -40,6 +40,7 @@ declare INT :: INT_t -- Interrupt sources
 
 -- types --
 type ByteStream = bits(8) list -- Byte stream (variable length instructions)
+declare instrNbr :: nat
 
 -- Initialisation --
 unit Init (pc :: bits(16)) =
@@ -51,5 +52,24 @@ unit Init (pc :: bits(16)) =
     PC          <- PC_t(pc);
     STATUS      <- STATUS_t(0);
     STATUS.r    <- true;
-    INT         <- INT_t(0)
+    INT         <- INT_t(0);
+    instrNbr    <- 0
+}
+
+-- debug --
+string cpuStateStr =
+{
+    var str = "";
+    str <- str : "A = 0x" : PadLeft (#"0", 2, [A]);
+    str <- str : ", S = 0x" : PadLeft (#"0", 2, [S]);
+    str <- str : "\\nX = 0x" : PadLeft (#"0", 2, [X]);
+    str <- str : ", Y = 0x" : PadLeft (#"0", 2, [Y]);
+    str <- str : "\\nPC = [":PadLeft (#"0", 2, [PC.H]):":":PadLeft (#"0", 2, [PC.L]):"]";
+    str <- str : "\\nSTATUS = <";
+    for b in 7..0 do str <- str : if &STATUS<b> then "1" else "0";
+    str <- str : ">";
+    str <- str : "\\nINT{IRQ:":if INT.IRQ then "1" else "0";
+    str <- str : ",NMI:":if INT.NMI then "1" else "0";
+    str <- str : ",RESET:":if INT.RESET then "1" else "0":"}";
+    str
 }

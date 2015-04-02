@@ -11,10 +11,11 @@ unit save_ctx () =
 
 unit Next () =
 {
+    Display("===============================");
     -- Highest priority, RESET
     if INT.RESET then
     {
-        Display(" -- RESET -- ");
+        Display(" --> RESET <-- ");
         save_ctx ();
         PC.L <- ReadMem(0xFFFC);
         PC.H <- ReadMem(0xFFFD)
@@ -22,7 +23,7 @@ unit Next () =
     -- Non maskable interrupt
     else if INT.NMI then
     {
-        Display(" -- NMI -- ");
+        Display(" --> NMI <-- ");
         save_ctx ();
         PC.L <- ReadMem(0xFFFA);
         PC.H <- ReadMem(0xFFFB)
@@ -30,17 +31,20 @@ unit Next () =
     -- Lowest priority, Interrupt request
     else if INT.IRQ and not STATUS.I then
     {
-        Display(" -- IRQ -- ");
+        Display(" --> IRQ <-- ");
         save_ctx ();
         STATUS.I <- true;
         PC.L <- ReadMem(0xFFFE);
         PC.H <- ReadMem(0xFFFF)
     } else nothing;
-    Display("Fetching instruction @ 0x":[&PC]);
+    Display(cpuStateStr);
+    Display("-------------------------------");
+    Display("#":[instrNbr]:" Fetch @ 0x":[&PC]);
     instBytes = Fetch (&PC);
     (pc_inc, inst) = Decode (instBytes);
     PC <- PC_t(&PC + [pc_inc]);
-    Run(inst)
+    Run(inst);
+    instrNbr <- instrNbr + 1
 }
 
 unit SetINT   ( r :: bool, n :: bool, i :: bool) =
