@@ -420,6 +420,7 @@ define Dec > DEC (op::Operand) = match op
 {
     case Addr (a) =>
     {
+        Display("DEC");
         new_val = ReadMem(a) - 1;
         WriteMem(a, new_val);
         STATUS <- updateNZ (STATUS, new_val)
@@ -708,7 +709,7 @@ define Flags > SEI = STATUS.I <- true
 {-
 TODO
 -}
-define Sys > BRK = { INT.IRQ <- true; STATUS.B <- true }
+define Sys > BRK = { Display ("BRK"); INT.IRQ <- true; STATUS.B <- true }
 
 -- NOP --
 ---------

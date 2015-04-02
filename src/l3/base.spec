@@ -42,7 +42,7 @@ declare INT :: INT_t -- Interrupt sources
 type ByteStream = bits(8) list -- Byte stream (variable length instructions)
 
 -- Initialisation --
-unit initCPU =
+unit InitCPU =
 {
     A           <- 0`8;
     X           <- 0`8;
