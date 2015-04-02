@@ -42,13 +42,13 @@ declare INT :: INT_t -- Interrupt sources
 type ByteStream = bits(8) list -- Byte stream (variable length instructions)
 
 -- Initialisation --
-unit InitCPU () =
+unit Init (pc :: bits(16)) =
 {
     A           <- 0`8;
     X           <- 0`8;
     Y           <- 0`8;
     S           <- 0`8;
-    PC          <- PC_t(0);
+    PC          <- PC_t(pc);
     STATUS      <- STATUS_t(0);
     STATUS.r    <- true;
     INT         <- INT_t(0)

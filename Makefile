@@ -13,7 +13,6 @@ L3SRCBASE+=addressing-modes.spec
 L3SRCBASE+=instructions.spec
 L3SRCBASE+=decode.spec
 L3SRCBASE+=next.spec
-L3SRCBASE+=init.spec
 L3SRC=$(patsubst %, $(L3SRCDIR)/%, $(L3SRCBASE))
 
 # make targets
