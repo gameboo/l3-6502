@@ -2,17 +2,15 @@
 -- (c) Alexandre Joannou, University of Cambridge
 ---------------------------------------------------------------------------
 
-{-
-declare MEM :: bits(16) -> bits(8)
+-- these wrappers use a dummy unit to force L3 to generate sml functions as
+-- opposed to maps
 
-ByteStream Fetch = list { MEM(&PC), MEM(&PC+1), MEM(&PC+2) }
-bits(8) ReadMem (addr::bits(16)) = MEM(addr)
-unit WriteMem (addr::bits(16), data::bits(8)) = MEM(addr) <- data
+declare SMLReadMem  :: (bits(16) * unit) -> bits(8)
+declare SMLFetch    :: (bits(16) * unit) -> ByteStream
+declare SMLWriteMem :: bits(16) * bits(8) -> unit
+declare SMLInitMem  :: unit -> unit
 
-unit InitMemory = MEM <- InitMap (UNKNOWN)
--}
-
-declare Fetch :: bits(16) -> ByteStream
-declare ReadMem :: bits(16) -> bits(8)
-declare WriteMem :: bits(16) * bits(8) -> unit
-declare InitMem :: unit
+bits(8)    ReadMem  (addr :: bits(16)) = SMLReadMem (addr, ())
+ByteStream Fetch    (addr :: bits(16)) = SMLFetch (addr, ())
+unit       WriteMem (addr :: bits(16), data :: bits(8)) = SMLWriteMem (addr, data)
+unit       InitMem  () = SMLInitMem ()
