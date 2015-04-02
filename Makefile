@@ -13,13 +13,16 @@ L3SRCBASE+=addressing-modes.spec
 L3SRCBASE+=instructions.spec
 L3SRCBASE+=decode.spec
 L3SRCBASE+=next.spec
+L3SRCBASE+=init.spec
 L3SRC=$(patsubst %, $(L3SRCDIR)/%, $(L3SRCBASE))
 
 # make targets
 #######################################
 SIM ?= l3-6502
 BUILDDIR ?= builddir
-SMLLIBDIR=src/sml/lib
+CDIR=src/c
+SMLDIR=src/sml
+SMLLIBDIR=$(SMLDIR)/lib
 SMLLIBSRC=Runtime.sig Runtime.sml\
           IntExtra.sig IntExtra.sml\
           Nat.sig Nat.sml\
@@ -33,8 +36,8 @@ SMLLIB=$(patsubst %, $(SMLLIBDIR)/%, $(SMLLIBSRC))
 
 all: $(SIM)
 
-$(SIM): $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLLIB)
-	mlton -output $(SIM) -default-type intinf src/sml/cpu6502.mlb
+$(SIM): $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/run.sml $(CDIR)/mem.c
+	mlton -output $(SIM) -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/mem.c
 
 $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml: $(L3SRC)
 	mkdir -p $(BUILDDIR)

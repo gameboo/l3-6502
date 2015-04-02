@@ -2,4 +2,4 @@
 -- (c) Alexandre Joannou, University of Cambridge
 ---------------------------------------------------------------------------
 
-unit Init = { InitCPU; InitMemory }
+unit Init () = { InitCPU () ; InitMem () }

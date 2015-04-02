@@ -2,39 +2,49 @@
 -- (c) Alexandre Joannou, University of Cambridge
 ---------------------------------------------------------------------------
 
-unit save_ctx =
+unit save_ctx () =
 {
         spush (PC.H);
         spush (PC.L);
         spush (&STATUS)
 }
 
-unit Next =
+unit Next () =
 {
     -- Highest priority, RESET
     if INT.RESET then
     {
-        save_ctx;
+        Display(" -- RESET -- ");
+        save_ctx ();
         PC.L <- ReadMem(0xFFFC);
         PC.H <- ReadMem(0xFFFD)
     }
     -- Non maskable interrupt
     else if INT.NMI then
     {
-        save_ctx;
+        Display(" -- NMI -- ");
+        save_ctx ();
         PC.L <- ReadMem(0xFFFA);
         PC.H <- ReadMem(0xFFFB)
     }
     -- Lowest priority, Interrupt request
     else if INT.IRQ and not STATUS.I then
     {
-        save_ctx;
+        Display(" -- IRQ -- ");
+        save_ctx ();
         STATUS.I <- true;
         PC.L <- ReadMem(0xFFFE);
         PC.H <- ReadMem(0xFFFF)
     } else nothing;
-    (pc_inc, inst) = Decode (Fetch (&PC));
+    Display("Fetching instruction @ 0x":[&PC]);
+    instBytes = Fetch (&PC);
+    (pc_inc, inst) = Decode (instBytes);
     PC <- PC_t(&PC + [pc_inc]);
-    Display("running one inst !");
     Run(inst)
 }
+
+unit SetINT   ( r :: bool, n :: bool, i :: bool) =
+{ INT.RESET <- r; INT.NMI <- n; INT.IRQ <- i }
+unit SetRESET ( v :: bool) = INT.RESET <- v
+unit SetNMI   ( v :: bool) = INT.NMI   <- v
+unit SetIRQ   ( v :: bool) = INT.IRQ   <- v
