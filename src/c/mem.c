@@ -30,3 +30,9 @@ void CInitMem ()
     printf("CInitMem\n");
     mem = (Word8 *) malloc (sizeof(Word8)*(2^16));
 }
+
+void CFreeMem ()
+{
+    printf("CFreeMem\n");
+    free(mem);
+}

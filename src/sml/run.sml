@@ -2,11 +2,11 @@
 
 (* Plug into C functions *)
 
-val CReadMem     = _import "CReadMem"  public: Word16.word -> Word8.word;
-val CWriteMem    = _import "CWriteMem" public: Word16.word * Word8.word -> unit;
+val CReadMem     = _import "CReadMem"     public: Word16.word -> Word8.word;
+val CWriteMem    = _import "CWriteMem"    public: Word16.word * Word8.word -> unit;
 val CWriteStream = _import "CWriteStream" public: Word16.word * Word8Vector.vector * Word32.word -> unit;
-val CInitMem     = _import "CInitMem"  public: unit -> unit;
-val CFreeMem     = _import "CFreeMem"  public: unit -> unit;
+val CInitMem     = _import "CInitMem"     public: unit -> unit;
+val CFreeMem     = _import "CFreeMem"     public: unit -> unit;
 
 fun read_mem (addr16, useless) =
   BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(BitsN.toInt(addr16)))), 8)
@@ -25,15 +25,9 @@ fun init_mem (stream) =
   case stream of
        SOME(addr, data) =>
          CWriteStream (Word16.fromInt(addr), data, Word32.fromInt(Vector.length(data)))
-    |  _ => ();
-  let
-    val lo = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFC))),8)
-    val hi = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFD))),8)
-  in
-    reset_pc := BitsN.concat([hi,lo])
-  end
+    |  _ => ()
 )
-fun free_mem () = CInitMem()
+fun free_mem () = CFreeMem()
 
 (* helpers *)
 fun failExit s = ( print (s ^ "\n"); OS.Process.exit OS.Process.failure )
@@ -54,7 +48,13 @@ fun init_cpu6505 () =
 
 fun init_system () =
 (
-  init_mem (!fileToLoad);
+  let
+    val () = init_mem (!fileToLoad)
+    val lo = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFC))),8)
+    val hi = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFD))),8)
+  in
+    reset_pc := BitsN.concat([hi,lo])
+  end;
   init_cpu6505 ()
 )
 
