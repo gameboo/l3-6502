@@ -17,6 +17,7 @@ fun fetch_inst (addr16, useless) =
  BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(BitsN.toInt(addr16)+1))), 8),
  BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(BitsN.toInt(addr16)+2))), 8)]
 
+val reset_pc = ref (BitsN.fromInt(0,16))
 val fileToLoad = ref (NONE: (int * Word8Vector.vector) option)
 fun init_mem (stream) =
 (
@@ -24,7 +25,13 @@ fun init_mem (stream) =
   case stream of
        SOME(addr, data) =>
          CWriteStream (Word16.fromInt(addr), data, Word32.fromInt(Vector.length(data)))
-    |  _ => ()
+    |  _ => ();
+  let
+    val lo = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFC))),8)
+    val hi = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFD))),8)
+  in
+    reset_pc := BitsN.concat([hi,lo])
+  end
 )
 fun free_mem () = CInitMem()
 
@@ -33,7 +40,7 @@ fun failExit s = ( print (s ^ "\n"); OS.Process.exit OS.Process.failure )
 
 (* Initialising L3 components *)
 
-val start_pc = ref (NONE: int option)
+val start_pc = ref (NONE)
 
 fun init_cpu6505 () =
 (
@@ -42,13 +49,7 @@ fun init_cpu6505 () =
   cpu6502.SMLWriteMem := write_mem;
   cpu6502.SMLFetch    := fetch_inst;
   (* 6502 init function *)
-  let
-    val lo = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFC))),8)
-    val hi = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFD))),8)
-    val reset_pc = BitsN.concat([hi,lo])
-  in
-    cpu6502.Init (BitsN.fromInt(Option.getOpt (!start_pc, BitsN.toInt(reset_pc)),16))
-  end
+  cpu6502.Init (Option.getOpt (!start_pc, !reset_pc))
 )
 
 fun init_system () =
@@ -149,7 +150,9 @@ val () =
                   | SOME "off" => cpu6502.Display := (fn str => ())
                   | _          => failExit "--display must be on or off\n"
         val (p, l) = processOption "--pc" l
-        val () = start_pc := Option.map getHexNumber p
+        fun flip f x y = f y x
+        fun curry f x y = f (x,y)
+        val () = start_pc := Option.map (((flip (curry BitsN.fromInt) 16)) o getHexNumber) p
         val (addr_file, l) = processOption2 "--at" l
         val () = case addr_file of
                     SOME (addr, file) =>
