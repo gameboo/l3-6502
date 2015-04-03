@@ -17,7 +17,6 @@ L3SRC=$(patsubst %, $(L3SRCDIR)/%, $(L3SRCBASE))
 
 # make targets
 #######################################
-SIM ?= l3-6502
 BUILDDIR ?= builddir
 CDIR=src/c
 SMLDIR=src/sml
@@ -33,10 +32,13 @@ SMLLIBSRC=Runtime.sig Runtime.sml\
           MutableMap.sig MutableMap.sml
 SMLLIB=$(patsubst %, $(SMLLIBDIR)/%, $(SMLLIBSRC))
 
-all: $(SIM)
+all: l3-6502
 
-$(SIM): $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/run.sml $(CDIR)/mem.c
-	mlton -output $(SIM) -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/mem.c
+l3-6502: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/run.sml $(CDIR)/mem.c
+	mlton -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/mem.c
+
+NES: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/run.sml $(CDIR)/nes-mem.c
+	mlton -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/nes-mem.c
 
 $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml: $(L3SRC)
 	mkdir -p $(BUILDDIR)

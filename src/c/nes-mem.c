@@ -5,7 +5,7 @@
 // ram //
 /////////
 
-#define RAM_OFFSET (x) (x%0x800)
+#define RAM_OFFSET(x) (x % 0x800)
 
 static Word8 * ram;
 static Word8 read_ram (Word16 addr)
@@ -33,11 +33,34 @@ static void free_ram ()
 // PPU //
 /////////
 
-#define PPU_OFFSET (x) (x%0x8)
+#define PPU_OFFSET(x) (x % 0x8)
+
+Word8 * ppu_regs;
+Word8 * ppu_pattern;
+Word8 * ppu_name;
+Word8 * ppu_palette;
 
 static Word8 read_ppu (Word16 addr)
 {
+    Word8 res = 0;
     printf(" -- ppu read\n");
+    switch PPU_OFFSET(addr)
+    {
+        case 2:
+            res = ppu_regs[2];
+            ppu_regs[2] = ppu_regs[2] & 0x7F;
+            break;
+        case 4:
+            res = ppu_regs[4];
+            break;
+        case 7:
+            res = ppu_regs[7];
+            break;
+        default:
+            printf(" -- ppu reg %d write only\n",PPU_OFFSET(addr));
+            res = 0;
+            break;
+    }
 }
 static void write_ppu (Word16 addr, Word8 data)
 {
@@ -46,17 +69,25 @@ static void write_ppu (Word16 addr, Word8 data)
 static void init_ppu ()
 {
     printf(" -- ppu init\n");
+    ppu_palette = (Word8*) malloc (sizeof(Word8)*0x0020);
+    ppu_name = (Word8*) malloc (sizeof(Word8)*0x1000);
+    ppu_pattern = (Word8*) malloc (sizeof(Word8)*0x2000);
+    ppu_regs = (Word8*) malloc (sizeof(Word8)*8);
 }
 static void free_ppu ()
 {
     printf(" -- ppu free\n");
+    free(ppu_regs);
+    free(ppu_pattern);
+    free(ppu_name);
+    free(ppu_palette);
 }
 
 ////////////
 // others //
 ////////////
 
-#define OTHERS_OFFSET (x) (x%0x20)
+#define OTHERS_OFFSET(x) (x % 0x20)
 
 static Word8 read_others (Word16 addr)
 {
@@ -79,7 +110,7 @@ static void free_others ()
 // EXP ROM //
 /////////////
 
-#define EXP_ROM_OFFSET (x) (x%0x1FDF)
+#define EXP_ROM_OFFSET(x) (x % 0x1FDF)
 
 static Word8 read_exp_rom (Word16 addr)
 {
@@ -102,7 +133,7 @@ static void free_exp_rom ()
 // Work/Save RAM //
 ///////////////////
 
-#define WSRAM_OFFSET (x) (x%0x2000)
+#define WSRAM_OFFSET(x) (x % 0x2000)
 
 static Word8 read_wsram (Word16 addr)
 {
@@ -125,7 +156,7 @@ static void free_wsram ()
 // PRGM ROM //
 //////////////
 
-#define PRGM_OFFSET (x) (x%0x8000)
+#define PRGM_OFFSET(x) (x % 0x8000)
 
 static Word8 read_prgm (Word16 addr)
 {
@@ -151,18 +182,18 @@ static void free_prgm ()
 Word8 CReadMem ( Word16 addr )
 {
     Word8 res = 42;
-    if (addr >= 0x0000 and addr < 0x2000) // 4 mirrors
+    if ((addr >= 0x0000) && (addr < 0x2000)) // 4 mirrors
         res = read_ram(addr);
-    else if (addr >= 0x2000 and addr < 0x1FF8) // 1024 mirrors
+    else if ((addr >= 0x2000) && (addr < 0x1FF8)) // 1024 mirrors
         res = read_ppu(addr);
     //else if (addr >= 0x1FF8 and addr < 0x4000) // nothing ?
-    else if (addr >= 0x4000 and addr < 0x4020) // registers
+    else if ((addr >= 0x4000) && (addr < 0x4020)) // registers
         res = read_others (addr);
-    else if (addr >= 0x4020 and addr < 0x6000) // expansion rom
+    else if ((addr >= 0x4020) && (addr < 0x6000)) // expansion rom
         res = read_exp_rom (addr);
-    else if (addr >= 0x6000 and addr < 0x8000) // SRAM
+    else if ((addr >= 0x6000) && (addr < 0x8000)) // SRAM
         res = read_wsram (addr);
-    else if (addr >= 0x8000 and addr < 0xC000) // PRGM-ROM
+    else if ((addr >= 0x8000) && (addr < 0xC000)) // PRGM-ROM
         res = read_prgm (addr);
     else if (addr >= 0xC000) // PRGM-ROM
         res = read_prgm (addr);
@@ -173,18 +204,18 @@ Word8 CReadMem ( Word16 addr )
 void CWriteMem ( Word16 addr, Word8 data )
 {
     printf("CWriteMem @0x%04x <- 0x%02x\n", addr, data);
-    if (addr >= 0x0000 and addr < 0x2000) // 4 mirrors
+    if ((addr >= 0x0000) && (addr < 0x2000)) // 4 mirrors
         write_ram(addr, data);
-    else if (addr >= 0x2000 and addr < 0x1FF8) // 1024 mirrors
+    else if ((addr >= 0x2000) && (addr < 0x1FF8)) // 1024 mirrors
         write_ppu(addr, data);
-    //else if (addr >= 0x1FF8 and addr < 0x4000) // nothing ?
-    else if (addr >= 0x4000 and addr < 0x4020) // registers
+    //else if (addr >= 0x1FF8 && addr < 0x4000) // nothing ?
+    else if ((addr >= 0x4000) && (addr < 0x4020)) // registers
         write_others (addr, data);
-    else if (addr >= 0x4020 and addr < 0x6000) // expansion rom
+    else if ((addr >= 0x4020) && (addr < 0x6000)) // expansion rom
         write_exp_rom (addr, data);
-    else if (addr >= 0x6000 and addr < 0x8000) // SRAM
+    else if ((addr >= 0x6000) && (addr < 0x8000)) // SRAM
         write_wsram (addr, data);
-    else if (addr >= 0x8000 and addr < 0xC000) // PRGM-ROM
+    else if ((addr >= 0x8000) && (addr < 0xC000)) // PRGM-ROM
         write_prgm (addr, data);
     else if (addr >= 0xC000) // PRGM-ROM
         write_prgm (addr, data);

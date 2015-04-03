@@ -47,8 +47,6 @@ unit Next () =
     instrNbr <- instrNbr + 1
 }
 
-unit SetINT   ( r :: bool, n :: bool, i :: bool) =
-{ INT.RESET <- r; INT.NMI <- n; INT.IRQ <- i }
 unit SetRESET ( v :: bool) = INT.RESET <- v
 unit SetNMI   ( v :: bool) = INT.NMI   <- v
 unit SetIRQ   ( v :: bool) = INT.IRQ   <- v

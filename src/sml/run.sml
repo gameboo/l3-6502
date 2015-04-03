@@ -8,6 +8,10 @@ val CWriteStream = _import "CWriteStream" public: Word16.word * Word8Vector.vect
 val CInitMem     = _import "CInitMem"     public: unit -> unit;
 val CFreeMem     = _import "CFreeMem"     public: unit -> unit;
 
+val CSetRESET = _export "CSetRESET": (bool -> unit) -> unit;
+val CSetNMI   = _export "CSetNMI"  : (bool -> unit) -> unit;
+val CSetIRQ   = _export "CSetIRQ"  : (bool -> unit) -> unit;
+
 fun read_mem (addr16, useless) =
   BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(BitsN.toInt(addr16)))), 8)
 fun write_mem (addr16, data8) =
@@ -42,6 +46,9 @@ fun init_cpu6505 () =
   cpu6502.SMLReadMem  := read_mem;
   cpu6502.SMLWriteMem := write_mem;
   cpu6502.SMLFetch    := fetch_inst;
+  CSetRESET (cpu6502.SetRESET);
+  CSetNMI   (cpu6502.SetNMI);
+  CSetIRQ   (cpu6502.SetIRQ);
   (* 6502 init function *)
   cpu6502.Init (Option.getOpt (!start_pc, !reset_pc))
 )
