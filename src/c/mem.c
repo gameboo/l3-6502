@@ -21,7 +21,7 @@ void CWriteStream ( Word16 addr, Pointer stream , Word32 size )
     Word32 i;
     for (i=0; i < size; i++)
     {
-        mem[addr+i] = stream[i];
+        mem[(addr+i)%0xFFFF] = stream[i];
     }
 }
 
