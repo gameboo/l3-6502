@@ -32,13 +32,19 @@ SMLLIBSRC=Runtime.sig Runtime.sml\
           MutableMap.sig MutableMap.sml
 SMLLIB=$(patsubst %, $(SMLLIBDIR)/%, $(SMLLIBSRC))
 
+# Other env variable
+########################################
+VERBOSE ?= 0
+
 all: l3-6502
 
 l3-6502: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/run.sml $(CDIR)/mem.c
-	mlton -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/mem.c
+	mlton -verbose $(VERBOSE) -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/mem.c
 
-NES: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/run.sml $(CDIR)/nes-mem.c
-	mlton -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/nes-mem.c
+NES: NES_sdl
+
+NES_sdl: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/run.sml $(CDIR)/nes-ppu-draw-sdl.c $(CDIR)/nes-ppu.c $(CDIR)/nes-mem.c
+	mlton -verbose $(VERBOSE) -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -link-opt "-lpthread -lSDL" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/nes-ppu-draw-sdl.c $(CDIR)/nes-ppu.c $(CDIR)/nes-mem.c
 
 $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml: $(L3SRC)
 	mkdir -p $(BUILDDIR)

@@ -33,55 +33,10 @@ static void free_ram ()
 // PPU //
 /////////
 
-#define PPU_OFFSET(x) (x % 0x8)
-
-Word8 * ppu_regs;
-Word8 * ppu_pattern;
-Word8 * ppu_name;
-Word8 * ppu_palette;
-
-static Word8 read_ppu (Word16 addr)
-{
-    Word8 res = 0;
-    printf(" -- ppu read\n");
-    switch PPU_OFFSET(addr)
-    {
-        case 2:
-            res = ppu_regs[2];
-            ppu_regs[2] = ppu_regs[2] & 0x7F;
-            break;
-        case 4:
-            res = ppu_regs[4];
-            break;
-        case 7:
-            res = ppu_regs[7];
-            break;
-        default:
-            printf(" -- ppu reg %d write only\n",PPU_OFFSET(addr));
-            res = 0;
-            break;
-    }
-}
-static void write_ppu (Word16 addr, Word8 data)
-{
-    printf(" -- ppu write\n");
-}
-static void init_ppu ()
-{
-    printf(" -- ppu init\n");
-    ppu_palette = (Word8*) malloc (sizeof(Word8)*0x0020);
-    ppu_name = (Word8*) malloc (sizeof(Word8)*0x1000);
-    ppu_pattern = (Word8*) malloc (sizeof(Word8)*0x2000);
-    ppu_regs = (Word8*) malloc (sizeof(Word8)*8);
-}
-static void free_ppu ()
-{
-    printf(" -- ppu free\n");
-    free(ppu_regs);
-    free(ppu_pattern);
-    free(ppu_name);
-    free(ppu_palette);
-}
+extern Word8 read_ppu (Word16 addr);
+extern void write_ppu (Word16 addr, Word8 data);
+extern void init_ppu ();
+extern void free_ppu ();
 
 ////////////
 // others //
@@ -92,6 +47,7 @@ static void free_ppu ()
 static Word8 read_others (Word16 addr)
 {
     printf(" -- others read\n");
+    return 42;
 }
 static void write_others (Word16 addr, Word8 data)
 {
@@ -115,6 +71,7 @@ static void free_others ()
 static Word8 read_exp_rom (Word16 addr)
 {
     printf(" -- exp rom read\n");
+    return 42;
 }
 static void write_exp_rom (Word16 addr, Word8 data)
 {
@@ -138,6 +95,7 @@ static void free_exp_rom ()
 static Word8 read_wsram (Word16 addr)
 {
     printf(" -- w/s ram read\n");
+    return 42;
 }
 static void write_wsram (Word16 addr, Word8 data)
 {
@@ -161,6 +119,7 @@ static void free_wsram ()
 static Word8 read_prgm (Word16 addr)
 {
     printf(" -- prgm read\n");
+    return 42;
 }
 static void write_prgm (Word16 addr, Word8 data)
 {
