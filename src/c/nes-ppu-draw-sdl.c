@@ -1,4 +1,5 @@
 #include "smlexport.h"
+#include "utils.h"
 #include <stdio.h>
 #include <SDL/SDL.h>
 
@@ -27,7 +28,7 @@ void *ppu_draw (void * useless)
     static int i =0;
     while (1)
     {
-        printf("draw (%3d,%3d,%3d)\n",r,g,b);
+        Display(2,"draw (%3d,%3d,%3d)\n",r,g,b);
         SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, r, g, b));
         SDL_Flip(screen);
         //SDL_Delay(1);

@@ -12,6 +12,8 @@ val CSetRESET = _export "CSetRESET": (bool -> unit) -> unit;
 val CSetNMI   = _export "CSetNMI"  : (bool -> unit) -> unit;
 val CSetIRQ   = _export "CSetIRQ"  : (bool -> unit) -> unit;
 
+val (_, CSet_display_lvl) = _symbol "display_lvl" alloc: (unit -> Int32.int) * (Int32.int -> unit);
+
 fun read_mem (addr16, useless) =
   BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(BitsN.toInt(addr16)))), 8)
 fun write_mem (addr16, data8) =
@@ -91,7 +93,7 @@ print ("\n\
 \http://www.cl.cam.ac.uk/~acjf3/l3\n\n\
 \usage: " ^ OS.Path.file (CommandLine.name ()) ^ " [arguments]\n\n\
 \arguments:\n\
-\  -d or --display <on|off> Turn on/off display statements in L3 sources (default off)\n\
+\  -d or --display <lvl>    Set verbosity level (default -1, i.e. no display)\n\
 \  --pc <address>           TODO Initial program counter value \n\
 \  --at <address> <file>    TODO Load binary file <file> at location <address>l\n\
 \  -h or --help             TODO Print this message\n\n")
@@ -151,11 +153,16 @@ val () =
   | l =>
       let
         val (disp, l) = processOption "--display" l
-        val () = case disp of
-                    NONE       => cpu6502.Display := (fn str => ())
-                  | SOME "on"  => cpu6502.Display := (fn str => print (str^"\n"))
-                  | SOME "off" => cpu6502.Display := (fn str => ())
-                  | _          => failExit "--display must be on or off\n"
+        val () = case Option.map (Int32.fromInt o getNumber) disp of
+                    NONE       =>
+                    (cpu6502.Display := (fn str => ());CSet_display_lvl(Int32.fromInt(0-1)))
+                  | SOME lvl   => (
+                      if lvl >= 0 then
+                        cpu6502.Display := (fn str => print(str^"\n"))
+                      else
+                        cpu6502.Display := (fn str => ());
+                      CSet_display_lvl (lvl)
+                    )
         val (p, l) = processOption "--pc" l
         fun flip f x y = f y x
         fun curry f x y = f (x,y)
