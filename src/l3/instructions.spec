@@ -28,7 +28,8 @@ bits(8) valFromOp (op::Operand) = match op
 
 unit doBranch (op::Operand) = PC <- PC_t (&PC + SignExtend(valFromOp (op)))
 
-unit unexpectedBehaviour = nothing -- TODO
+unit unexpectedBehaviour = Display("Unexpected Behaviour") -- TODO
+unit unexpectedOperand = Display("Unexpected Operand") -- TODO
 
 -----------------------------
 -- Load / Store Operations --
@@ -81,7 +82,7 @@ The STATUS register is left untouched
 define Store > STA (op::Operand) = match op
 {
     case Addr(a) => WriteMem(a, A)
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- STX --
@@ -93,7 +94,7 @@ The STATUS register is left untouched
 define Store > STX (op::Operand) = match op
 {
     case Addr(a) => WriteMem(a, X)
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- STY --
@@ -105,7 +106,7 @@ The STATUS register is left untouched
 define Store > STY (op::Operand) = match op
 {
     case Addr(a) => WriteMem(a, Y)
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -----------------------------------
@@ -315,7 +316,10 @@ define Arith > ADC (op::Operand) =
 -- SBC --
 ---------
 {-
-TODO
+The operand is subtracted from the accumulator, using the complement of the C
+(carry) flag as an additional borrow. The result is stored in the accumulator.
+The N (negative), V (overflow) and Z (zero) flags are updated
+The C (carry) flag is updated with the borrow from the operation
 -}
 define Arith > SBC (op::Operand) =
 {
@@ -335,7 +339,9 @@ define Arith > SBC (op::Operand) =
 -- CMP --
 ---------
 {-
-TODO
+The operand is subtracted from the accumulator. The result is ignored, but the
+STATUS register is updated.
+The N (negative), the Z (zero) and the C (carry) flags are updated
 -}
 define Arith > CMP (op::Operand) =
 {
@@ -348,7 +354,9 @@ define Arith > CMP (op::Operand) =
 -- CPX --
 ---------
 {-
-TODO
+The operand is subtracted from the X index register. The result is ignored, but
+the STATUS register is updated.
+The N (negative), the Z (zero) and the C (carry) flags are updated
 -}
 define Arith > CPX (op::Operand) =
 {
@@ -361,7 +369,9 @@ define Arith > CPX (op::Operand) =
 -- CPY --
 ---------
 {-
-TODO
+The operand is subtracted from the Y index register. The result is ignored, but
+the STATUS register is updated.
+The N (negative), the Z (zero) and the C (carry) flags are updated
 -}
 define Arith > CPY (op::Operand) =
 {
@@ -377,7 +387,8 @@ define Arith > CPY (op::Operand) =
 
 -- INC --
 {-
-TODO
+The operand is incremented by one. The result is stored back in the memory.
+The N (negative) and the Z (zero) flags are updated
 -}
 define Inc > INC (op::Operand) = match op
 {
@@ -387,13 +398,15 @@ define Inc > INC (op::Operand) = match op
         WriteMem(a, new_val);
         STATUS <- updateNZ (STATUS, new_val)
     }
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- INX --
 ---------
 {-
-TODO
+The X index register is incremented by one. The result is stored in the X index
+register.
+The N (negative) and the Z (zero) flags are updated
 -}
 define Inc > INX =
 {
@@ -404,7 +417,9 @@ define Inc > INX =
 -- INY --
 ---------
 {-
-TODO
+The Y index register is incremented by one. The result is stored in the Y index
+register.
+The N (negative) and the Z (zero) flags are updated
 -}
 define Inc > INY =
 {
@@ -414,7 +429,8 @@ define Inc > INY =
 
 -- DEC --
 {-
-TODO
+The operand is decremented by one. The result is stored back in the memory.
+The N (negative) and the Z (zero) flags are updated
 -}
 define Dec > DEC (op::Operand) = match op
 {
@@ -424,13 +440,15 @@ define Dec > DEC (op::Operand) = match op
         WriteMem(a, new_val);
         STATUS <- updateNZ (STATUS, new_val)
     }
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- DEX --
 ---------
 {-
-TODO
+The X index register is decremented by one. The result is stored in the X index
+register.
+The N (negative) and the Z (zero) flags are updated
 -}
 define Dec > DEX =
 {
@@ -441,7 +459,9 @@ define Dec > DEX =
 -- DEY --
 ---------
 {-
-TODO
+The Y index register is decremented by one. The result is stored in the Y index
+register.
+The N (negative) and the Z (zero) flags are updated
 -}
 define Dec > DEY =
 {
@@ -456,7 +476,10 @@ define Dec > DEY =
 -- ASL --
 ---------
 {-
-TODO
+The operand (accumulator/memory) is shifted one bit left, inserting one ”0”
+from the right. The result is stored in the operand.
+The N (negative) and the Z (zero) flags are updated
+The C (carry) flag is updated with the ejected bit’s value
 -}
 define Shift > ASL (op::Operand) = match op
 {
@@ -474,13 +497,17 @@ define Shift > ASL (op::Operand) = match op
         STATUS.C <- new_val<8>;
         STATUS <- updateNZ (STATUS, new_val<7:0>)
     }
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- LSR --
 ---------
 {-
-TODO
+The operand (accumulator/memory) is shifted one bit right, inserting one ”0”
+from the left. The result is stored in the operand.
+The C (carry) flag is updated with the ejected bit’s value
+The Z (zero) flag is updated
+The N (negative) flag is reset to ”0”
 -}
 define Shift > LSR (op::Operand) = match op
 {
@@ -498,13 +525,17 @@ define Shift > LSR (op::Operand) = match op
         A <- A >> 1;
         STATUS <- updateNZ (STATUS, A)
     }
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- ROL --
 ---------
 {-
-TODO
+The operand (accumulator/memory) is rotated one bit left, inserting the value
+of the C (carry) flag from the right, and then updating C with the ejected
+bit’s value. The result is stored in the operand.
+The N (negative) and Z (zero) flags are updated
+The C (carry) flag is updated with the ejected bit’s value
 -}
 define Shift > ROL (op::Operand) = match op
 {
@@ -524,13 +555,17 @@ define Shift > ROL (op::Operand) = match op
         A <- new_val<7:0>;
         STATUS <- updateNZ (STATUS, new_val<7:0>)
     }
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- ROR --
 ---------
 {-
-TODO
+The operand (accumulator/memory) is rotated one bit right, inserting the value
+of the C (carry) flag from the right, and then updating C with the ejected
+bit’s value. The result is stored in the operand.
+The N (negative) and Z (zero) flags are updated
+The C (carry) flag is updated with the ejected bit’s value
 -}
 define Shift > ROR (op::Operand) = match op
 {
@@ -552,7 +587,7 @@ define Shift > ROR (op::Operand) = match op
         STATUS.C <- val<0>;
         STATUS <- updateNZ (STATUS, new_val)
     }
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 ----------
@@ -562,18 +597,22 @@ define Shift > ROR (op::Operand) = match op
 -- JMP --
 ---------
 {-
-TODO
+The PC (program counter) is loaded with the operand’s value.
+The STATUS register is left untouched
 -}
 define Jump > JMP (op::Operand) = match op
 {
     case Addr (a) => PC <- PC_t(a)
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- JSR --
 ---------
 {-
-TODO
+The PC (program counter) is first stored on the stack (high byte first, then
+low byte), then loaded with the operand’s value. The S (stack pointer) register
+is decremented by 2.
+The STATUS register is left untouched
 -}
 define Jump > JSR (op::Operand) = match op
 {
@@ -583,13 +622,18 @@ define Jump > JSR (op::Operand) = match op
         spush (PC.L);
         PC <- PC_t(a)
     }
-    case _ => unexpectedBehaviour
+    case _ => unexpectedOperand
 }
 
 -- RTS --
 ---------
 {-
-TODO
+The S (stack pointer) register is incremented by one. The pointed location’s
+value is poped from the stack into the PC (program counter) register’s low
+byte. Then, the S (stack pointer) register is incremented by one. The pointed
+location’s value is poped from the stack into the PC (program counter)
+register’s high byte.
+The STATUS register is left untouched
 -}
 define Jump > RTS = { PC.L <- spop; PC.H <- spop }
 
@@ -600,56 +644,72 @@ define Jump > RTS = { PC.L <- spop; PC.H <- spop }
 -- BCC --
 ---------
 {-
-TODO
+If the C (carry) flag is ”0”, the (signed) offset contained in the operand is
+added to the PC (program counter) register to point to a new instruction.
+The STATUS register is left untouched
 -}
 define Branch > BCC (op::Operand) = when not STATUS.C do doBranch (op)
 
 -- BCS --
 ---------
 {-
-TODO
+If the C (carry) flag is ”1”, the (signed) offset contained in the operand is
+added to the PC (program counter) register to point to a new instruction.
+The STATUS register is left untouched
 -}
 define Branch > BCS (op::Operand) = when STATUS.C do doBranch (op)
 
 -- BEQ --
 ---------
 {-
-TODO
+If the Z (zero) flag is ”1”, the (signed) offset contained in the operand is
+added to the PC (program counter) register to point to a new instruction.
+The STATUS register is left untouched
 -}
 define Branch > BEQ (op::Operand) = when STATUS.Z do doBranch (op)
 
 -- BMI --
 ---------
 {-
-TODO
+If the N (negative) flag is ”1”, the (signed) offset contained in the operand
+is added to the PC (program counter) register to point to a new instruction.
+The STATUS register is left untouched
 -}
 define Branch > BMI (op::Operand) = when STATUS.N do doBranch (op)
 
 -- BNE --
 ---------
 {-
-TODO
+If the Z (zero) flag is ”0”, the (signed) offset contained in the operand is
+added to the PC (program counter) register to point to a new instruction.
+The STATUS register is left untouched
 -}
 define Branch > BNE (op::Operand) = when not STATUS.Z do doBranch (op)
 
 -- BPL --
 ---------
 {-
-TODO
+If the N (negative) flag is ”0”, the (signed) offset contained in the operand
+is added to the PC (program counter) register to point to a new instruction.
+The STATUS register is left untouched
 -}
 define Branch > BPL (op::Operand) = when not STATUS.N do doBranch (op)
 
 -- BVC --
 ---------
 {-
-TODO
+If the V (overflow) flag is ”0”, the (signed) offset contained in the operand
+is added to the PC (program counter) register to point to a new instruction.
+The STATUS register is left untouched
 -}
 define Branch > BVC (op::Operand) = when not STATUS.V do doBranch (op)
 
 -- BVS --
 ---------
 {-
-TODO
+If the V (overflow) flag is ”1”, the (signed) offset contained in the operand
+is added to the PC (program counter) register to point to a new instruction.
+The STATUS register is left untouched
 -}
 define Branch > BVS (op::Operand) = when STATUS.V do doBranch (op)
 
@@ -659,43 +719,50 @@ define Branch > BVS (op::Operand) = when STATUS.V do doBranch (op)
 
 -- CLC --
 {-
-TODO
+The STATUS register is updated.
+The C (carry) flag is reset to 0
 -}
 define Flags > CLC = STATUS.C <- false
 
 -- CLD --
 {-
-TODO
+The STATUS register is updated.
+The D (decimal mode) flag is reset to 0
 -}
 define Flags > CLD = STATUS.D <- false
 
 -- CLI --
 {-
-TODO
+The STATUS register is updated.
+The I (irq disable) flag is reset to 0
 -}
 define Flags > CLI = STATUS.I <- false
 
 -- CLV --
 {-
-TODO
+The STATUS register is updated.
+The V (overflow) flag is reset to 0
 -}
 define Flags > CLV = STATUS.V <- false
 
 -- SEC --
 {-
-TODO
+The STATUS register is updated.
+The C (carry) flag is set to ”1”
 -}
 define Flags > SEC = STATUS.C <- true
 
 -- SED --
 {-
-TODO
+The STATUS register is updated.
+The D (decimal mode) flag is set to ”1”
 -}
 define Flags > SED = STATUS.D <- true
 
 -- SEI --
 {-
-TODO
+The STATUS register is updated.
+The I (irq disable) flag is set to 1
 -}
 define Flags > SEI = STATUS.I <- true
 
@@ -706,21 +773,30 @@ define Flags > SEI = STATUS.I <- true
 -- BRK --
 ---------
 {-
-TODO
+This instruction triggers an interrupt request to the CPU, allowing ”software
+interrupts”
+The B (break command) flag is set to 1
+The I (irq disable) flag will be set to 1 when the irq will be handled
 -}
 define Sys > BRK = { INT.IRQ <- true; STATUS.B <- true }
 
 -- NOP --
 ---------
 {-
-TODO
+No operation
 -}
 define Sys > NOP = nothing
 
 -- RTI --
 ---------
 {-
-TODO
+return from BRK/IRQ/NMI
+The S (stack pointer) register is incremented by one. The pointed location’s
+value is poped from the stack into the STATUS register. Then, the S (stack
+pointer) register is incremented by one. The pointed location’s value is poped
+from the stack into the PC (program counter) register’s low byte. Then, the S
+(stack pointer) register is incremented by one. The pointed location’s value is
+poped from the stack into the PC (program counter) register’s high byte.
 -}
 define Sys > RTI = { STATUS <- STATUS_t(spop); PC.L <- spop; PC.H <- spop }
 
