@@ -20,23 +20,44 @@ extern Word8 * spr_vram;
 
 static SDL_Surface * screen = NULL;
 
+#define DRAWPIX(sfc, x, y, colour)\
+do {\
+    *((Uint32*) sfc->pixels + y + x) = colour;\
+} while (0)
+
+static void test_draw ()
+{
+    int x, y, ytimesw;
+    static int h = 0;
+    for (y = 0; y < screen->h; y++ )
+    {
+        ytimesw = y*screen->pitch/4;
+        for (x = 0; x < screen->w; x++ )
+        {
+            DRAWPIX(screen, x, ytimesw, SDL_MapRGB(screen->format,(x*x)/256+3*y+h, (y*y)/256+x+h, h));
+            h++;
+        }
+    }
+}
+
+static void draw_line (Uint8 l)
+{
+}
+
 void *ppu_draw (void * useless)
 {
-    static int r = 0;
-    static int g = 0;
-    static int b = 0;
-    static int i =0;
     while (1)
     {
-        Display(2,"draw (%3d,%3d,%3d)\n",r,g,b);
-        SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, r, g, b));
+        if(SDL_MUSTLOCK(screen)) 
+            while (SDL_LockSurface(screen) < 0) {}
+
+        Display(2,"draw\n");
+
+        test_draw();
+
+        if(SDL_MUSTLOCK(screen)) SDL_UnlockSurface(screen);
         SDL_Flip(screen);
-        //SDL_Delay(1);
-        r+=25;
-        r%=256;
-        if (i % 4) {g+=25;g%=256;}
-        if (i % 8) {b+=25;b%=256;}
-        i++;
+        //SDL_Delay(50);
     }
 }
 
