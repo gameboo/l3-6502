@@ -68,10 +68,10 @@ static void free_others ()
 ///////////////
 
 Word8 * lower_bank;
-Word8 read_lower_bank (Word16 a) { lower_bank[a]; }
+Word8 read_lower_bank (Word16 a) { return lower_bank[a]; }
 //void write_lower_bank (Word16 a, Word8 d) { lower_bank[a] = d; }
 Word8 * upper_bank;
-Word8 read_upper_bank (Word16 a) { upper_bank[a]; }
+Word8 read_upper_bank (Word16 a) { return upper_bank[a]; }
 //void write_upper_bank (Word16 a, Word8 d) { upper_bank[a] = d; }
 //sram
 //exprom
@@ -166,6 +166,7 @@ void CLoadiNES ( Pointer stream , Word32 size )
         int i = 0;
         for (i = 0; i < 0x4000; i++)
         {
+            Display(2,"-- init cartridge bank[%d] with 0xFF\n",i);
             lower_bank[i] = 0xFF;
             upper_bank[i] = 0xFF;
         }

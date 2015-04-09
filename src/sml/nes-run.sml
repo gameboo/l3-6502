@@ -24,10 +24,10 @@ fun fetch_inst (addr16, useless) =
  BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(BitsN.toInt(addr16)+2))), 8)]
 
 fun init_mem (inesfile) =
-  let
-    val () = CInitMem ()
-    val () = CLoadiNES (inesfile, Word32.fromInt(Vector.length(inesfile)))
-  in () end
+(
+  CInitMem ();
+  CLoadiNES (inesfile, Word32.fromInt(Vector.length(inesfile)))
+)
 
 fun free_mem () = CFreeMem()
 
@@ -56,8 +56,8 @@ fun init_cpu6505 () =
 
 fun init_system (inesfile) =
 (
-  init_cpu6505 ();
-  init_mem (inesfile)
+  init_mem (inesfile);
+  init_cpu6505 ()
 )
 
 fun clean_system () =
