@@ -20,7 +20,7 @@ static int ppuscroll_write_count;
 static Word8 hoffset_latch;
 static Word8 voffset_latch;
 static int ppuaddr_write_count;
-static Word16 vram_addr;
+Word16 vram_addr;
 
 //////////
 // VRAM //
@@ -185,6 +185,7 @@ void init_ppu ()
 void free_ppu ()
 {
     Display(2," -- ppu free\n");
+    ppu_draw_clean();
     free(regs);
     free(palettes_vram);
     free(names_vram);
