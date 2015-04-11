@@ -67,52 +67,10 @@ static void free_others ()
 // cartridge //
 ///////////////
 
-Word8 * lower_bank;
-Word8 read_lower_bank (Word16 a) { return lower_bank[a]; }
-//void write_lower_bank (Word16 a, Word8 d) { lower_bank[a] = d; }
-Word8 * upper_bank;
-Word8 read_upper_bank (Word16 a) { return upper_bank[a]; }
-//void write_upper_bank (Word16 a, Word8 d) { upper_bank[a] = d; }
-//sram
-//exprom
-static Word8 read_cart (Word16 addr)
-{
-    Display(2," -- cart read\n");
-    Word8 res = 0x30;
-    if ((addr >= 0x4020) && (addr < 0x6000)) // exprom
-        res = 0x31;
-    else if ((addr >= 0x6000) && (addr < 0x8000)) // sram
-        res = 0x32;
-    else if ((addr >= 0x8000) && (addr < 0xC000)) // lower bank
-        res = read_lower_bank(addr&0x3FFF);
-    else if (addr >= 0xC000) // upper bank
-        res = read_upper_bank(addr&0x3FFF);
-    return res;
-}
-static void write_cart (Word16 addr, Word8 data)
-{
-    Display(2," -- cart write -- not supported\n");
-    /*
-    if ((addr >= 0x4020) && (addr < 0x6000)) {}// exprom
-    else if ((addr >= 0x6000) && (addr < 0x8000)) {}// sram
-    else if ((addr >= 0x8000) && (addr < 0xC000)) // lower bank
-        res = write_lower_bank(addr&0x3FFF, data);
-    else if (addr >= 0xC000) // upper bank
-        res = write_upper_bank(addr&0x3FFF, data);
-    */
-}
-static void init_cart ()
-{
-    Display(2," -- cart init\n");
-    lower_bank = (Word8*) malloc (sizeof(Word8)*0x4000);
-    upper_bank = (Word8*) malloc (sizeof(Word8)*0x4000);
-}
-static void free_cart ()
-{
-    Display(2," -- cart free\n");
-    free(upper_bank);
-    free(lower_bank);
-}
+extern Word8 read_cart (Word16 addr);
+extern void write_cart (Word16 addr, Word8 data);
+extern void init_cart ();
+extern void free_cart ();
 
 ///////////////////////////////
 // functions exported to sml //
@@ -146,32 +104,6 @@ void CWriteMem ( Word16 addr, Word8 data )
         write_others (addr, data);
     else if (addr >= 0x4020) // cartridge
         write_cart (addr, data);
-}
-
-void CLoadiNES ( Pointer stream , Word32 size )
-{
-    Display(2,"CLoadiNES\n");
-    if (upper_bank == NULL || lower_bank == NULL)
-    {
-        Display(2,"cartridge space uninitialized\n");
-        exit(-1);
-    }
-    else
-    {
-        Display(2,"-- init cartridge upper bank\n");
-        memcpy(upper_bank, &stream[15], 0x4000);
-        Display(2,"-- init cartridge lower bank\n");
-        memcpy(lower_bank, &stream[15+0x4000], 0x4000);
-        /*
-        int i = 0;
-        for (i = 0; i < 0x4000; i++)
-        {
-            Display(2,"-- init cartridge bank[%d] with 0xFF\n",i);
-            lower_bank[i] = 0xFF;
-            upper_bank[i] = 0xFF;
-        }
-        */
-    }
 }
 
 void CInitMem ()

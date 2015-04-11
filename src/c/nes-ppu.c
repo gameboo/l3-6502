@@ -156,6 +156,16 @@ void write_ppu (Word16 addr, Word8 data)
     write_latch = data; 
 }
 
+Word8 * map_ppu_pattern_table(Word8* new_chr_mem)
+{
+    Display(3,"backup old\n");
+    Word8 * old = patterns_vram;
+    Display(3,"replace with new\n");
+    patterns_vram = new_chr_mem;
+    Display(3,"return old\n");
+    return old;
+}
+
 void init_ppu ()
 {
     Display(2," -- ppu init\n");
