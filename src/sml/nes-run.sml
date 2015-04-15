@@ -7,10 +7,17 @@ val CWriteMem    = _import "CWriteMem"    public: Word16.word * Word8.word -> un
 val CLoadiNES    = _import "CLoadiNES"    public: Word8Vector.vector * Word32.word -> unit;
 val CInitMem     = _import "CInitMem"     public: unit -> unit;
 val CFreeMem     = _import "CFreeMem"     public: unit -> unit;
+val CStepMem     = _import "CStepMem"     public: Word64.word -> unit;
 
-val CSetRESET = _export "CSetRESET": (bool -> unit) -> unit;
-val CSetNMI   = _export "CSetNMI"  : (bool -> unit) -> unit;
-val CSetIRQ   = _export "CSetIRQ"  : (bool -> unit) -> unit;
+val setupCSetRESET = _export "CSetRESET": (bool -> unit) -> unit;
+val setupCSetNMI   = _export "CSetNMI"  : (bool -> unit) -> unit;
+val setupCSetIRQ   = _export "CSetIRQ"  : (bool -> unit) -> unit;
+val doSetRESET = ref false
+val doSetNMI   = ref false
+val doSetIRQ   = ref false
+val _ = setupCSetRESET (fn (b) => doSetRESET := b)
+val _ = setupCSetNMI   (fn (b) => doSetNMI   := b)
+val _ = setupCSetIRQ   (fn (b) => doSetIRQ   := b)
 
 val (_, CSet_display_lvl) = _symbol "display_lvl" alloc: (unit -> Int32.int) * (Int32.int -> unit);
 
@@ -42,9 +49,6 @@ fun init_cpu6505 () =
   cpu6502.SMLReadMem  := read_mem;
   cpu6502.SMLWriteMem := write_mem;
   cpu6502.SMLFetch    := fetch_inst;
-  CSetRESET (cpu6502.SetRESET);
-  CSetNMI   (cpu6502.SetNMI);
-  CSetIRQ   (cpu6502.SetIRQ);
   (* 6502 init function *)
   let
     val lo = BitsN.fromInt(Word8.toInt(CReadMem(Word16.fromInt(0xFFFC))),8)
@@ -67,13 +71,23 @@ fun clean_system () =
 
 (* Actual simulation *)
 
-fun exec_loop () = (cpu6502.Next(); exec_loop ())
+
+
+fun exec_loop (inst_nb) =
+(
+  if !doSetRESET then cpu6502.SetRESET(true) else cpu6502.SetRESET(false);
+  if !doSetNMI   then cpu6502.SetNMI(true)   else cpu6502.SetNMI(false);
+  if !doSetIRQ   then cpu6502.SetIRQ(true)   else cpu6502.SetIRQ(false);
+  cpu6502.Next();
+  CStepMem(inst_nb);
+  exec_loop (inst_nb+Word64.fromInt(1))
+)
 
 fun run (inesfile) =
 (
   init_system (inesfile);
 
-  exec_loop ();
+  exec_loop (Word64.fromInt(0));
 
   clean_system ()
 )
@@ -123,7 +137,11 @@ val () =
                     (cpu6502.Display := (fn str => ());CSet_display_lvl(Int32.fromInt(0-1)))
                   | SOME lvl   => (
                       if lvl >= 0 then
-                        cpu6502.Display := (fn str => print(str^"\n"))
+                        cpu6502.Display := ( fn str => (
+                          TextIO.flushOut TextIO.stdOut;
+                          print(str^"\n");
+                          TextIO.flushOut TextIO.stdOut)
+                        )
                       else
                         cpu6502.Display := (fn str => ());
                       CSet_display_lvl (lvl)

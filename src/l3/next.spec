@@ -47,6 +47,6 @@ unit Next () =
     instrNbr <- instrNbr + 1
 }
 
-unit SetRESET ( v :: bool) = INT.RESET <- v
-unit SetNMI   ( v :: bool) = INT.NMI   <- v
-unit SetIRQ   ( v :: bool) = INT.IRQ   <- v
+unit SetRESET ( v :: bool) = { Display("SetRESET(":[v]:")"); INT.RESET <- v }
+unit SetNMI   ( v :: bool) = { Display("SetNMI(":[v]:")");   INT.NMI   <- v }
+unit SetIRQ   ( v :: bool) = { Display("SetIRQ(":[v]:")");   INT.IRQ   <- v }

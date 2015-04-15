@@ -55,19 +55,13 @@ static inline void setVRAM (Word16 addr, Word8 data)
 Word8 * spr_vram;
 #define OAM(x) (spr_vram[(x) & 0xFF])
 
-/////////////////////
-// ppu draw thread //
-/////////////////////
-static pthread_t ppu_draw_thread;
-extern void *ppu_draw (void * useless);
-
 ///////////////////////
 // nes-mem interface //
 ///////////////////////
 Word8 read_ppu (Word16 addr)
 {
     Word8 res = 0;
-    Display(2," -- ppu read\n");
+    Display(3," -- ppu read\n");
     switch PPU_OFFSET(addr)
     {
         case 2: // PPUSTATUS
@@ -92,7 +86,7 @@ Word8 read_ppu (Word16 addr)
             vram_addr = (PPUCTRL%0x04) ? (vram_addr+32)%0xFFFF:(vram_addr+1)%0xFFFF;
             break;
         default:
-            Display(2," -- attempted read ppu reg %d, write only\n",PPU_OFFSET(addr));
+            Display(3," -- attempted read ppu reg %d, write only\n",PPU_OFFSET(addr));
             res = regs[PPU_OFFSET(addr)];
             break;
     }
@@ -101,7 +95,7 @@ Word8 read_ppu (Word16 addr)
 
 void write_ppu (Word16 addr, Word8 data)
 {
-    Display(2," -- ppu write\n");
+    Display(3," -- ppu write\n");
     switch PPU_OFFSET(addr)
     {
         case 0: // PPUCTRL
@@ -150,7 +144,7 @@ void write_ppu (Word16 addr, Word8 data)
             vram_addr = (PPUCTRL%0x04) ? (vram_addr+32)%0xFFFF:(vram_addr+1)%0xFFFF;
             break;
         default:
-            Display(2," -- ppu reg %d write only\n",PPU_OFFSET(addr));
+            Display(3," -- ppu reg %d write only\n",PPU_OFFSET(addr));
             break;
     }
     write_latch = data; 
@@ -166,25 +160,27 @@ Word8 * map_ppu_pattern_table(Word8* new_chr_mem)
     return old;
 }
 
+extern void ppu_draw_init();
+
 void init_ppu ()
 {
-    Display(2," -- ppu init\n");
+    Display(3," -- ppu init\n");
     spr_vram = (Word8*) malloc (sizeof(Word8)*0x0100); // 256 bytes
     patterns_vram = (Word8*) malloc (sizeof(Word8)*0x2000); // 8K
     names_vram = (Word8*) malloc (sizeof(Word8)*0x1000); // 4K //XXX supposed to be 2K and potentioally another 2K in the cartridge
     palettes_vram = (Word8*) malloc (sizeof(Word8)*0x0020); // 32 bytes
     regs = (Word8*) malloc (sizeof(Word8)*8);
+    CSetNMI(0);
+    CSetRESET(0);
+    CSetIRQ(0);
+    CSetIRQ(1);
+    CSetIRQ(0);
     ppu_draw_init();
-    if (pthread_create(&ppu_draw_thread, NULL, ppu_draw, NULL))
-    {
-        fprintf(stderr, "Error creating ppu draw thread\n");
-        return 1;
-    }
 }
 
 void free_ppu ()
 {
-    Display(2," -- ppu free\n");
+    Display(3," -- ppu free\n");
     ppu_draw_clean();
     free(regs);
     free(palettes_vram);

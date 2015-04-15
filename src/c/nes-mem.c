@@ -38,6 +38,7 @@ extern Word8 read_ppu (Word16 addr);
 extern void write_ppu (Word16 addr, Word8 data);
 extern void init_ppu ();
 extern void free_ppu ();
+extern void step_ppu ();
 
 ////////////
 // others //
@@ -104,6 +105,12 @@ void CWriteMem ( Word16 addr, Word8 data )
         write_others (addr, data);
     else if (addr >= 0x4020) // cartridge
         write_cart (addr, data);
+}
+
+void CStepMem ( Word64 inst_count )
+{
+    if (! inst_count % 512)
+        step_ppu();
 }
 
 void CInitMem ()

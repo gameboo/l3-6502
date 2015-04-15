@@ -7,6 +7,7 @@ val CWriteMem    = _import "CWriteMem"    public: Word16.word * Word8.word -> un
 val CWriteStream = _import "CWriteStream" public: Word16.word * Word8Vector.vector * Word32.word -> unit;
 val CInitMem     = _import "CInitMem"     public: unit -> unit;
 val CFreeMem     = _import "CFreeMem"     public: unit -> unit;
+val CStepMem     = _import "CStepMem"     public: Word32.word -> unit;
 
 val CSetRESET = _export "CSetRESET": (bool -> unit) -> unit;
 val CSetNMI   = _export "CSetNMI"  : (bool -> unit) -> unit;
@@ -74,7 +75,8 @@ fun clean_system () =
 
 (* Actual simulation *)
 
-fun exec_loop () = (cpu6502.Next(); exec_loop ())
+val inst_count = ref (Word32.fromInt(0))
+fun exec_loop () = (cpu6502.Next(); inst_count := inst_count + 1; CStepMem(!inst_count); exec_loop ())
 
 fun run () =
 (
