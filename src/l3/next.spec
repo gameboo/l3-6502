@@ -11,11 +11,11 @@ unit save_ctx () =
 
 unit Next () =
 {
-    Display("===============================");
+    Display(1,"=========================================");
     -- Highest priority, RESET
     if INT.RESET then
     {
-        Display(" --> RESET <-- ");
+        Display(1," --> RESET <-- ");
         save_ctx ();
         PC.L <- ReadMem(0xFFFC);
         PC.H <- ReadMem(0xFFFD)
@@ -23,7 +23,7 @@ unit Next () =
     -- Non maskable interrupt
     else if INT.NMI then
     {
-        Display(" --> NMI <-- ");
+        Display(1," --> NMI <-- ");
         save_ctx ();
         PC.L <- ReadMem(0xFFFA);
         PC.H <- ReadMem(0xFFFB)
@@ -31,22 +31,22 @@ unit Next () =
     -- Lowest priority, Interrupt request
     else if INT.IRQ and not STATUS.I then
     {
-        Display(" --> IRQ <-- ");
+        Display(1," --> IRQ <-- ");
         save_ctx ();
         STATUS.I <- true;
         PC.L <- ReadMem(0xFFFE);
         PC.H <- ReadMem(0xFFFF)
     } else nothing;
-    Display(cpuStateStr);
-    Display("-------------------------------");
-    Display("#":[instrNbr]:" Fetch @ 0x":[&PC]);
+    Display(2,cpuStateStr);
+    Display(2,"-----------------------------------------");
     instBytes = Fetch (&PC);
-    (pc_inc, inst) = Decode (instBytes);
+    (inst_str, pc_inc, inst) = Decode (instBytes);
+    Display(1, "[#":[instrNbr]:" - 0x":[&PC]:" - ":[pc_inc]:" byte":(if pc_inc > 1 then "s" else ""):"] ":inst_str);
     PC <- PC_t(&PC + [pc_inc]);
     Run(inst);
     instrNbr <- instrNbr + 1
 }
 
-unit SetRESET ( v :: bool) = { Display("SetRESET(":[v]:")"); INT.RESET <- v }
-unit SetNMI   ( v :: bool) = { Display("SetNMI(":[v]:")");   INT.NMI   <- v }
-unit SetIRQ   ( v :: bool) = { Display("SetIRQ(":[v]:")");   INT.IRQ   <- v }
+unit SetRESET ( v :: bool) = { Display(3,"SetRESET(":[v]:")"); INT.RESET <- v }
+unit SetNMI   ( v :: bool) = { Display(3,"SetNMI(":[v]:")");   INT.NMI   <- v }
+unit SetIRQ   ( v :: bool) = { Display(3,"SetIRQ(":[v]:")");   INT.IRQ   <- v }

@@ -109,7 +109,7 @@ void CWriteMem ( Word16 addr, Word8 data )
 
 void CStepMem ( Word64 inst_count )
 {
-    if (! inst_count % 512)
+    if (inst_count % 512 == 0 && inst_count != 0)
         step_ppu();
 }
 

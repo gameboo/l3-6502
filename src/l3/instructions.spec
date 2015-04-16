@@ -28,8 +28,8 @@ bits(8) valFromOp (op::Operand) = match op
 
 unit doBranch (op::Operand) = PC <- PC_t (&PC + SignExtend(valFromOp (op)))
 
-unit unexpectedBehaviour = Display("Unexpected Behaviour") -- TODO
-unit unexpectedOperand = Display("Unexpected Operand") -- TODO
+unit unexpectedBehaviour = Display(1,"Unexpected Behaviour") -- TODO
+unit unexpectedOperand = Display(1,"Unexpected Operand") -- TODO
 
 -----------------------------
 -- Load / Store Operations --

@@ -2,4 +2,4 @@
 -- (c) Alexandre Joannou, University of Cambridge --
 ----------------------------------------------------
 
-declare Display :: string -> unit
+declare Display :: int * string -> unit

@@ -75,10 +75,13 @@ fun clean_system () =
 
 fun exec_loop (inst_nb) =
 (
-  if !doSetRESET then cpu6502.SetRESET(true) else cpu6502.SetRESET(false);
-  if !doSetNMI   then cpu6502.SetNMI(true)   else cpu6502.SetNMI(false);
-  if !doSetIRQ   then cpu6502.SetIRQ(true)   else cpu6502.SetIRQ(false);
+  cpu6502.SetRESET(!doSetRESET);
+  cpu6502.SetNMI(!doSetNMI);
+  cpu6502.SetIRQ(!doSetIRQ);
   cpu6502.Next();
+  doSetRESET := false;
+  doSetNMI   := false;
+  doSetIRQ   := false;
   CStepMem(inst_nb);
   exec_loop (inst_nb+Word64.fromInt(1))
 )
@@ -132,19 +135,19 @@ val () =
   | l =>
       let
         val (disp, l) = processOption "--display" l
-        val () = case Option.map (Int32.fromInt o getNumber) disp of
+        val () = case Option.map getNumber disp of
                     NONE       =>
-                    (cpu6502.Display := (fn str => ());CSet_display_lvl(Int32.fromInt(0-1)))
+                    (cpu6502.Display := (fn (dlvl, str) => ());CSet_display_lvl(Int32.fromInt(0-1)))
                   | SOME lvl   => (
                       if lvl >= 0 then
-                        cpu6502.Display := ( fn str => (
+                        cpu6502.Display := ( fn (dlvl, str) => if dlvl <= lvl then (
                           TextIO.flushOut TextIO.stdOut;
                           print(str^"\n");
-                          TextIO.flushOut TextIO.stdOut)
+                          TextIO.flushOut TextIO.stdOut) else ()
                         )
                       else
-                        cpu6502.Display := (fn str => ());
-                      CSet_display_lvl (lvl)
+                        cpu6502.Display := (fn (dlvl, str) => ());
+                      CSet_display_lvl (Int32.fromInt(lvl))
                     )
         val istream   = (BinIO.openIn o hd) l
         val vec       = BinIO.inputAll istream
