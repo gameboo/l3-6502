@@ -16,6 +16,10 @@ void CWriteMem ( Word16 addr, Word8 data )
     mem[addr] = data;
 }
 
+void CStepMem ( Word64 inst_count )
+{
+}
+
 void CWriteStream ( Word16 addr, Pointer stream , Word32 size )
 {
     Display(2,"CWriteStream @ 0x%04x\n", addr);

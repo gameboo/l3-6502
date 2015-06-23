@@ -76,7 +76,7 @@ fun clean_system () =
 (* Actual simulation *)
 
 val inst_count = ref (Word32.fromInt(0))
-fun exec_loop () = (cpu6502.Next(); inst_count := inst_count + 1; CStepMem(!inst_count); exec_loop ())
+fun exec_loop () = (cpu6502.Next(); inst_count := !inst_count + Word.fromInt(1); CStepMem(!inst_count); exec_loop ())
 
 fun run () =
 (
@@ -155,15 +155,19 @@ val () =
   | l =>
       let
         val (disp, l) = processOption "--display" l
-        val () = case Option.map (Int32.fromInt o getNumber) disp of
+        val () = case Option.map getNumber disp of
                     NONE       =>
-                    (cpu6502.Display := (fn str => ());CSet_display_lvl(Int32.fromInt(0-1)))
+                    (cpu6502.Display := (fn (dlvl, str) => ());CSet_display_lvl(Int32.fromInt(0-1)))
                   | SOME lvl   => (
                       if lvl >= 0 then
-                        cpu6502.Display := (fn str => print(str^"\n"))
+                        cpu6502.Display := ( fn (dlvl, str) => if dlvl <= lvl then (
+                          TextIO.flushOut TextIO.stdOut;
+                          print(str^"\n");
+                          TextIO.flushOut TextIO.stdOut) else ()
+                        )
                       else
-                        cpu6502.Display := (fn str => ());
-                      CSet_display_lvl (lvl)
+                        cpu6502.Display := (fn (dlvl, str) => ());
+                      CSet_display_lvl (Int32.fromInt(lvl))
                     )
         val (p, l) = processOption "--pc" l
         fun flip f x y = f y x
