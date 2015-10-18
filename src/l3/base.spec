@@ -71,5 +71,6 @@ string cpuStateStr =
     str <- str : "\\nINT{IRQ:":if INT.IRQ then "1" else "0";
     str <- str : ",NMI:":if INT.NMI then "1" else "0";
     str <- str : ",RESET:":if INT.RESET then "1" else "0":"}";
+    str <- str : "\\n";
     str
 }

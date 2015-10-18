@@ -1,7 +1,6 @@
-#include "smlexport.h"
+#include "libcpu6502.h"
 #include "utils.h"
-#include <stdio.h>
-#include <pthread.h>
+#include <stdlib.h>
 
 Word8 * regs;
 #define PPUCTRL     regs[0]
@@ -101,8 +100,8 @@ void write_ppu (Word16 addr, Word8 data)
         case 0: // PPUCTRL
             PPUCTRL = data;
             // when bit 7 is set, send NMI
-            if (data & 0x80) CSetNMI (1);
-            else CSetNMI (0);
+            if (data & 0x80) cpu6502_SetNMI (1);
+            else cpu6502_SetNMI (0);
             break;
         case 1: // PPUMASK
             PPUMASK = data;
@@ -161,6 +160,7 @@ Word8 * map_ppu_pattern_table(Word8* new_chr_mem)
 }
 
 extern void ppu_draw_init();
+extern void ppu_draw_clean();
 
 void init_ppu ()
 {
@@ -170,11 +170,11 @@ void init_ppu ()
     names_vram = (Word8*) malloc (sizeof(Word8)*0x1000); // 4K //XXX supposed to be 2K and potentioally another 2K in the cartridge
     palettes_vram = (Word8*) malloc (sizeof(Word8)*0x0020); // 32 bytes
     regs = (Word8*) malloc (sizeof(Word8)*8);
-    CSetNMI(0);
-    CSetRESET(0);
-    CSetIRQ(0);
-    CSetIRQ(1);
-    CSetIRQ(0);
+    cpu6502_SetNMI(0);
+    cpu6502_SetRESET(0);
+    cpu6502_SetIRQ(0);
+    cpu6502_SetIRQ(1);
+    cpu6502_SetIRQ(0);
     ppu_draw_init();
 }
 

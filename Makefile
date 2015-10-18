@@ -20,31 +20,36 @@ L3SRC=$(patsubst %, $(L3SRCDIR)/%, $(L3SRCBASE))
 BUILDDIR ?= builddir
 CDIR=src/c
 SMLDIR=src/sml
-SMLLIBDIR=$(SMLDIR)/lib
-SMLLIBSRC=Runtime.sig Runtime.sml\
-          IntExtra.sig IntExtra.sml\
-          Nat.sig Nat.sml\
-          L3.sig L3.sml\
-          Bitstring.sig Bitstring.sml\
-          BitsN.sig BitsN.sml\
-          FP64.sig FP64.sml\
-          Ptree.sig Ptree.sml\
-          MutableMap.sig MutableMap.sml
-SMLLIB=$(patsubst %, $(SMLLIBDIR)/%, $(SMLLIBSRC))
+L3_SML_LIB ?= `l3 --lib-path`
 
 # Other env variable
 ########################################
 VERBOSE ?= 0
+MLTON ?= mlton
+#
+#all: l3-6502
+#
+#l3-6502: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/cpu6502.mlb $(SMLDIR)/run.sml $(CDIR)/mem.c
+#	mlton -verbose $(VERBOSE) -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf -mlb-path-var 'L3_SML_LIB '$(L3_SML_LIB) $(SMLDIR)/cpu6502.mlb $(CDIR)/mem.c
+#
+#NES: NES_sdl
+#
+#NES_sdl: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/nes.mlb $(SMLDIR)/nes-run.sml $(CDIR)/nes-ppu-draw-sdl.c $(CDIR)/nes-ppu.c $(CDIR)/nes-cartridge.c $(CDIR)/nes-mem.c
+#	mlton -verbose $(VERBOSE) -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-Wall -g -I $(BUILDDIR)/" -link-opt "-lpthread -lSDL" -default-type intinf -mlb-path-var 'L3_SML_LIB '$(L3_SML_LIB) $(SMLDIR)/nes.mlb $(CDIR)/nes-ppu-draw-sdl.c $(CDIR)/nes-ppu.c $(CDIR)/nes-cartridge.c $(CDIR)/nes-mem.c
+#
 
-all: l3-6502
+NES_C_DIR=$(CDIR)/nes-emul
+NES_C_SRC=$(wildcard $(NES_C_DIR)/*.c)
+NES_OBJ=$(notdir $(patsubst %.c,%.o,$(NES_C_SRC)))
 
-l3-6502: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/cpu6502.mlb $(SMLDIR)/run.sml $(CDIR)/mem.c
-	mlton -verbose $(VERBOSE) -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-I $(BUILDDIR)/" -default-type intinf $(SMLDIR)/cpu6502.mlb $(CDIR)/mem.c
+$(NES_OBJ):%.o:$(NES_C_DIR)/%.c libcpu6502
+	$(CC) -I $(CDIR) -I $(BUILDDIR) -c -o $(BUILDDIR)/$@ $<
 
-NES: NES_sdl
+nes-l3: $(NES_OBJ)
+	$(CC) -o $@ $(addprefix $(BUILDDIR)/,$^) -lSDL -L$(BUILDDIR) -lcpu6502
 
-NES_sdl: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/nes.mlb $(SMLDIR)/nes-run.sml $(CDIR)/nes-ppu-draw-sdl.c $(CDIR)/nes-ppu.c $(CDIR)/nes-cartridge.c $(CDIR)/nes-mem.c
-	mlton -verbose $(VERBOSE) -output $@ -default-ann 'allowFFI true' -export-header $(BUILDDIR)/smlexport.h -cc-opt "-Wall -g -I $(BUILDDIR)/" -link-opt "-lpthread -lSDL" -default-type intinf $(SMLDIR)/nes.mlb $(CDIR)/nes-ppu-draw-sdl.c $(CDIR)/nes-ppu.c $(CDIR)/nes-cartridge.c $(CDIR)/nes-mem.c
+libcpu6502: $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml $(SMLDIR)/libcpu6502.mlb $(SMLDIR)/libcpu6502.sml
+	mlton -verbose $(VERBOSE) -output $(BUILDDIR)/$@.so -format library -default-ann 'allowFFI true' -export-header $(BUILDDIR)/$@.h -default-type intinf -mlb-path-var 'L3_SML_LIB '$(L3_SML_LIB) $(SMLDIR)/libcpu6502.mlb
 
 $(BUILDDIR)/cpu6502.sig $(BUILDDIR)/cpu6502.sml: $(L3SRC)
 	mkdir -p $(BUILDDIR)

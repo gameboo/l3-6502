@@ -1,6 +1,5 @@
-#include "smlexport.h"
+#include "libcpu6502.h"
 #include "utils.h"
-#include <stdio.h>
 #include <SDL/SDL.h>
 
 extern Word8 * regs;
@@ -95,7 +94,6 @@ do {\
     *((Uint32*) sfc->pixels + y + x) = colour;\
 } while (0)
 
-/*
 static void test_draw ()
 {
     int x, y, ytimesw;
@@ -110,7 +108,6 @@ static void test_draw ()
         }
     }
 }
-*/
 
 // accessing vram addr fields
 #define CURRIDX(x)      (x & 0x0FFF)
@@ -122,23 +119,23 @@ static void test_draw ()
 static void draw_tile_line()
 {
     Word8 tile_nbr = names_vram[CURRIDX(vram_addr)+0x400*TABLENBR(vram_addr)];
-    Display(5,"Found tile number %d\n",tile_nbr);
+    Display(6,"Found tile number %d\n",tile_nbr);
     Word8 pattern_tbl_offset = ((PPUCTRL & 0x8) >> 3)*0x1000;
-    Display(5,"Found pattern_tbl_offset 0x%4x\n",pattern_tbl_offset);
+    Display(6,"Found pattern_tbl_offset 0x%4x\n",pattern_tbl_offset);
     Word8 * tile_ptr = &patterns_vram[(tile_nbr<<4)+pattern_tbl_offset];// 16 bytes per tyle so << 4
-    Display(5,"Found tile_ptr\n");
+    Display(6,"Found tile_ptr\n");
     int i = 0;
     Word8 lobyte = tile_ptr[FINEYSCROLL(vram_addr)];
-    Display(5,"Found lobyte 0x%2x\n",lobyte);
+    Display(6,"Found lobyte 0x%2x\n",lobyte);
     Word8 hibyte = tile_ptr[FINEYSCROLL(vram_addr)+16];
-    Display(5,"Found hibyte 0x%2x\n",hibyte);
+    Display(6,"Found hibyte 0x%2x\n",hibyte);
     Word8 clr_idx_hi2 = 0; // TODO in the attribute table
     Word8 clr_idx_lo2 = 0;
     Word8 clr_idx = 0;
     Uint32 color = 0;
     for (i=0;i<8;i++)
     {
-        Display(5,"Drawing pixel %d\n",i);
+        Display(6,"Drawing pixel %d\n",i);
         clr_idx_lo2 = ((lobyte>>i)&0x1)|(((hibyte>>i)&0x1)<<1);
         clr_idx = (clr_idx_hi2<<2)|clr_idx_lo2;
         color = sys_palette[palettes_vram[clr_idx&0xf]&0x3F];
@@ -152,35 +149,38 @@ static void draw_screen ()
     int j = 0;
     for (i=0;i<240;i++)
     {
-        Display(4,"Drawing line %d\n",i);
+        Display(5,"Drawing line %d\n",i);
         for (j=0;j<32;j++)
         {
-            Display(4,"Drawing tile %d\n",j);
+            Display(5,"Drawing tile %d\n",j);
             draw_tile_line();
             vram_addr ++;
         }
     }
 }
 
-void step_ppu ()
+void step_ppu (Word64 inst_count)
 {
-    Display(4,"step ppu\n");
+    if (inst_count % 100 == 0)
+    {
+    Display(5,"step ppu\n");
     if(SDL_MUSTLOCK(screen)) 
         while (SDL_LockSurface(screen) < 0) {}
 
-    Display(4,"drawing screen\n");
+    Display(5,"drawing screen\n");
 
     //test_draw();
     draw_screen();
 
-    Display(4,"screen drawn\n");
+    Display(5,"screen drawn\n");
     if(SDL_MUSTLOCK(screen)) SDL_UnlockSurface(screen);
     SDL_Flip(screen);
-    Display(4,"screen flipped\n");
+    Display(5,"screen flipped\n");
     //SDL_Delay(50);
     //Display(3,"waited for a while\n");
-    CSetNMI(1);
-    Display(4,"raised NMI interrupt line\n");
+    cpu6502_SetNMI(1);
+    Display(5,"raised NMI interrupt line\n");
+    }
 }
 
 void ppu_draw_init ()

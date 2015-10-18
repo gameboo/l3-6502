@@ -1,6 +1,6 @@
-#include "smlexport.h"
+#include "libcpu6502.h"
 #include "utils.h"
-#include <stdio.h>
+#include <stdlib.h>
 
 /////////
 // ram //
@@ -34,11 +34,11 @@ static void free_ram ()
 // PPU //
 /////////
 
-extern Word8 read_ppu (Word16 addr);
-extern void write_ppu (Word16 addr, Word8 data);
-extern void init_ppu ();
-extern void free_ppu ();
-extern void step_ppu ();
+extern Word8 read_ppu  (Word16 addr);
+extern void  write_ppu (Word16 addr, Word8 data);
+extern void  init_ppu  ();
+extern void  free_ppu  ();
+extern void  step_ppu  (Word64 inst_count);
 
 ////////////
 // others //
@@ -77,56 +77,55 @@ extern void free_cart ();
 // functions exported to sml //
 ///////////////////////////////
 
-Word8 CReadMem ( Word16 addr )
+Word8 ReadMem ( Word16 addr )
 {
     Word8 res = 0x42;
     if ((addr >= 0x0000) && (addr < 0x2000)) // 4 mirrors
         res = read_ram(addr);
-    else if ((addr >= 0x2000) && (addr < 0x1FF8)) // 1024 mirrors
+    else if ((addr >= 0x2000) && (addr < 0x4000)) // 1024 mirrors
         res = read_ppu(addr);
-    //else if (addr >= 0x1FF8 and addr < 0x4000) // nothing ?
     else if ((addr >= 0x4000) && (addr < 0x4020)) // registers
         res = read_others (addr);
     else if (addr >= 0x4020) // Cartridge
         res = read_cart (addr);
-    Display(2,"CReadMem @0x%04x = 0x%02x\n", addr, res);
+    Display(2,"ReadMem @0x%04x = 0x%02x\n", addr, res);
     return res;
 }
 
-void CWriteMem ( Word16 addr, Word8 data )
+void WriteMem ( Word16 addr, Word8 data )
 {
-    Display(2,"CWriteMem @0x%04x <- 0x%02x\n", addr, data);
+    Display(2,"WriteMem @0x%04x <- 0x%02x\n", addr, data);
     if ((addr >= 0x0000) && (addr < 0x2000)) // 4 mirrors
         write_ram(addr, data);
-    else if ((addr >= 0x2000) && (addr < 0x1FF8)) // 1024 mirrors
+    else if ((addr >= 0x2000) && (addr < 0x4000)) // 1024 mirrors
         write_ppu(addr, data);
-    //else if (addr >= 0x1FF8 && addr < 0x4000) // nothing ?
     else if ((addr >= 0x4000) && (addr < 0x4020)) // registers
         write_others (addr, data);
     else if (addr >= 0x4020) // cartridge
         write_cart (addr, data);
 }
 
-void CStepMem ( Word64 inst_count )
+void StepMem ( Word64 inst_count )
 {
-    if (inst_count % 1024 == 0 && inst_count != 0)
-        step_ppu();
+    cpu6502_SetRESET(0);
+    cpu6502_SetNMI(0);
+    step_ppu(inst_count);
 }
 
-void CInitMem ()
+void InitMem (char * ines_filename)
 {
-    Display(2,"CInitMem\n");
-    init_ram();
+    Display(2,"InitMem\n");
+    init_cart(ines_filename);
     init_ppu();
     init_others();
-    init_cart();
+    init_ram();
 }
 
-void CFreeMem ()
+void FreeMem ()
 {
-    Display(2,"CFreeMem\n");
+    Display(2,"FreeMem\n");
     free_ram();
-    free_ppu();
     free_others();
+    free_ppu();
     free_cart();
 }
